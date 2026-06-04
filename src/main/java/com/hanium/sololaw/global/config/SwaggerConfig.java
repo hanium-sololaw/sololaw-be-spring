@@ -43,7 +43,7 @@ public class SwaggerConfig {
                         .bearerFormat("JWT")))
         .info(
             new Info()
-                .title("나홀로소송 API 명세서")
+                .title("나홀로법에 API 명세서")
                 .version("1.0")
                 .description(
                     """
