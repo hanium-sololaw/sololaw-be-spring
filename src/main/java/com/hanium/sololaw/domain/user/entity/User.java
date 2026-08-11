@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import com.hanium.sololaw.domain.user.entity.enums.Role;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User extends BaseTimeEntity {
 
