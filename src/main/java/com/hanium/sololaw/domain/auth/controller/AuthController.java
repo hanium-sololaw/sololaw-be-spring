@@ -79,16 +79,16 @@ public class AuthController {
             """)
   @PostMapping("/login")
   public ResponseEntity<BaseResponse<Void>> login(@Valid @RequestBody LoginRequest request) {
-    TokenResult tokenResponse = authService.login(request);
+    TokenResult tokenResult = authService.login(request);
     HttpHeaders tokenHeaders = new HttpHeaders();
     tokenHeaders.add(
         HttpHeaders.SET_COOKIE,
-        jwtCookieWriter.addAccessTokenToCookie(tokenResponse.getAccessToken()).toString());
+        jwtCookieWriter.addAccessTokenToCookie(tokenResult.accessToken()).toString());
     tokenHeaders.add(
         HttpHeaders.SET_COOKIE,
         jwtCookieWriter
             .addRefreshTokenToCookie(
-                tokenResponse.getRefreshToken(), tokenResponse.getRefreshTokenTtlSeconds())
+                tokenResult.refreshToken(), tokenResult.refreshTokenTtlSeconds())
             .toString());
     return ResponseEntity.status(200)
         .headers(tokenHeaders)
@@ -107,16 +107,16 @@ public class AuthController {
   public ResponseEntity<BaseResponse<Void>> refresh(HttpServletRequest request) {
     String refreshToken = jwtProvider.extractRefreshToken(request);
     validateRefreshToken(refreshToken);
-    TokenResult tokenResponse = authService.refresh(refreshToken);
+    TokenResult tokenResult = authService.refresh(refreshToken);
     HttpHeaders tokenHeaders = new HttpHeaders();
     tokenHeaders.add(
         HttpHeaders.SET_COOKIE,
-        jwtCookieWriter.addAccessTokenToCookie(tokenResponse.getAccessToken()).toString());
+        jwtCookieWriter.addAccessTokenToCookie(tokenResult.accessToken()).toString());
     tokenHeaders.add(
         HttpHeaders.SET_COOKIE,
         jwtCookieWriter
             .addRefreshTokenToCookie(
-                tokenResponse.getRefreshToken(), tokenResponse.getRefreshTokenTtlSeconds())
+                tokenResult.refreshToken(), tokenResult.refreshTokenTtlSeconds())
             .toString());
     return ResponseEntity.status(200)
         .headers(tokenHeaders)

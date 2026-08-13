@@ -51,6 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   /** Swagger UI 및 API 문서 경로를 포함한 인증 제외 패턴 */
   private static final String[] EXCLUDED_PATHS = {
     "/api/auth/**",
+    "/internal/**",
     "/swagger-ui/**",
     "/swagger-ui.html",
     "/v3/api-docs/**",

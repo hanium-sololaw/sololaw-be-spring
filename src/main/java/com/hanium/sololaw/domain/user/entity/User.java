@@ -3,11 +3,14 @@
  */
 package com.hanium.sololaw.domain.user.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 
 import com.hanium.sololaw.domain.user.entity.enums.Role;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User extends BaseTimeEntity {
 
@@ -41,7 +44,17 @@ public class User extends BaseTimeEntity {
   @Enumerated(EnumType.STRING)
   private Role role = Role.USER;
 
+  private LocalDateTime termsAgreedAt;
+
   public void updatePassword(String encodedPassword) {
     this.password = encodedPassword;
+  }
+
+  public void updateName(String name) {
+    this.name = name;
+  }
+
+  public void updateEmail(String email) {
+    this.email = email;
   }
 }
