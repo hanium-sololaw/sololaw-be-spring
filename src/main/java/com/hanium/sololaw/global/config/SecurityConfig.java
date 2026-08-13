@@ -121,6 +121,8 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers("/api/auth/**")
                 .permitAll()
+                .requestMatchers("/internal/**")
+                .permitAll()
                 .anyRequest()
                 .authenticated());
   }
