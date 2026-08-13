@@ -3,6 +3,8 @@
  */
 package com.hanium.sololaw.domain.user.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 
 import com.hanium.sololaw.domain.user.entity.enums.Role;
@@ -42,7 +44,17 @@ public class User extends BaseTimeEntity {
   @Enumerated(EnumType.STRING)
   private Role role = Role.USER;
 
+  private LocalDateTime termsAgreedAt;
+
   public void updatePassword(String encodedPassword) {
     this.password = encodedPassword;
+  }
+
+  public void updateName(String name) {
+    this.name = name;
+  }
+
+  public void updateEmail(String email) {
+    this.email = email;
   }
 }
