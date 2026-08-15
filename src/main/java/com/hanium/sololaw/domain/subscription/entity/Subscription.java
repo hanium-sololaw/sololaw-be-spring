@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 import com.hanium.sololaw.domain.subscription.entity.enums.BillingCycle;
-import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionPlan;
+import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
@@ -37,7 +37,7 @@ public class Subscription extends BaseTimeEntity {
   @Builder.Default
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private SubscriptionPlan plan = SubscriptionPlan.FREE;
+  private StoragePlan plan = StoragePlan.FREE;
 
   @Builder.Default
   @Enumerated(EnumType.STRING)
@@ -65,7 +65,10 @@ public class Subscription extends BaseTimeEntity {
   private LocalDateTime canceledAt;
 
   @Column(length = 255)
-  private String billingKey;
+  private String stripeCustomerId;
+
+  @Column(length = 255)
+  private String stripeSubscriptionId;
 
   @Column(nullable = false)
   private LocalDateTime startedAt;

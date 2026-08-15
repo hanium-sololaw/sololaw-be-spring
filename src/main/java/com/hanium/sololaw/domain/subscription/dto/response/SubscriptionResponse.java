@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.hanium.sololaw.domain.subscription.entity.enums.BillingCycle;
-import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionPlan;
+import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,7 +16,7 @@ import lombok.Builder;
 @Builder
 @Schema(description = "내 구독 응답 DTO")
 public record SubscriptionResponse(
-    @Schema(description = "구독 플랜") SubscriptionPlan plan,
+    @Schema(description = "저장공간 구독 플랜") StoragePlan plan,
     @Schema(description = "구독 상태") SubscriptionStatus status,
     @Schema(description = "저장 용량 한도(바이트)", example = "524288000") Long storageLimitBytes,
     @Schema(description = "현재 사용 중인 저장 용량(바이트)", example = "0") Long usedStorageBytes,
