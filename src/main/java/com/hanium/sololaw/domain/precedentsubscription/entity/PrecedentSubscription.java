@@ -1,15 +1,15 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.entity;
+package com.hanium.sololaw.domain.precedentsubscription.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
+import com.hanium.sololaw.domain.precedentsubscription.entity.enums.PrecedentSearchPlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.BillingCycle;
-import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
@@ -24,8 +24,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "subscriptions")
-public class Subscription extends BaseTimeEntity {
+@Table(name = "precedent_subscriptions")
+public class PrecedentSubscription extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,20 +37,12 @@ public class Subscription extends BaseTimeEntity {
   @Builder.Default
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private StoragePlan plan = StoragePlan.FREE;
+  private PrecedentSearchPlan plan = PrecedentSearchPlan.FREE;
 
   @Builder.Default
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
   private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
-
-  @Builder.Default
-  @Column(nullable = false)
-  private Long storageLimitBytes = 524_288_000L;
-
-  @Builder.Default
-  @Column(nullable = false)
-  private Long usedStorageBytes = 0L;
 
   @Builder.Default
   @Column(nullable = false, precision = 15, scale = 0)
@@ -76,12 +68,12 @@ public class Subscription extends BaseTimeEntity {
   private LocalDateTime expiresAt;
 
   /**
-   * FREE 플랜 기본값으로 구독을 생성합니다. userId·startedAt 외 필드는 이 엔티티의 {@code @Builder.Default} 값을 따릅니다.
+   * FREE 플랜 기본값으로 판례검색 구독을 생성합니다. userId·startedAt 외 필드는 이 엔티티의 {@code @Builder.Default} 값을 따릅니다.
    *
    * @param userId 구독을 생성할 사용자 ID
-   * @return 기본값으로 구성된 Subscription
+   * @return 기본값으로 구성된 PrecedentSubscription
    */
-  public static Subscription createDefault(Long userId) {
-    return Subscription.builder().userId(userId).startedAt(LocalDateTime.now()).build();
+  public static PrecedentSubscription createDefault(Long userId) {
+    return PrecedentSubscription.builder().userId(userId).startedAt(LocalDateTime.now()).build();
   }
 }

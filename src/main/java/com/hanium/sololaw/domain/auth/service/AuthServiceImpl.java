@@ -23,6 +23,8 @@ import com.hanium.sololaw.domain.auth.exception.AuthErrorCode;
 import com.hanium.sololaw.domain.auth.mapper.AuthMapper;
 import com.hanium.sololaw.domain.notification.entity.NotificationSetting;
 import com.hanium.sololaw.domain.notification.repository.NotificationSettingRepository;
+import com.hanium.sololaw.domain.precedentsubscription.entity.PrecedentSubscription;
+import com.hanium.sololaw.domain.precedentsubscription.repository.PrecedentSubscriptionRepository;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
 import com.hanium.sololaw.domain.subscription.repository.SubscriptionRepository;
 import com.hanium.sololaw.domain.user.entity.User;
@@ -51,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
   private final UserDetailsService userDetailsService;
   private final UserRepository userRepository;
   private final SubscriptionRepository subscriptionRepository;
+  private final PrecedentSubscriptionRepository precedentSubscriptionRepository;
   private final NotificationSettingRepository notificationSettingRepository;
   private final PasswordEncoder passwordEncoder;
   private final AuthMapper authMapper;
@@ -98,9 +101,10 @@ public class AuthServiceImpl implements AuthService {
 
     /*
        (4) 구독/알림 설정 기본값 행 생성
-       - subscriptions·notification_settings는 1:1 필수 관계이므로 회원가입 시점에 함께 생성한다.
+       - subscriptions·precedent_subscriptions·notification_settings는 1:1 필수 관계이므로 회원가입 시점에 함께 생성한다.
     */
     subscriptionRepository.save(Subscription.createDefault(savedUser.getId()));
+    precedentSubscriptionRepository.save(PrecedentSubscription.createDefault(savedUser.getId()));
     notificationSettingRepository.save(NotificationSetting.createDefault(savedUser.getId()));
 
     log.info("[AuthService] signUp() - END | userId: {}", savedUser.getId());

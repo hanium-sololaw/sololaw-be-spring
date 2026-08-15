@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.hanium.sololaw.domain.subscription.dto.response.SubscriptionResponse;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
-import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionPlan;
+import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 import com.hanium.sololaw.domain.subscription.exception.SubscriptionErrorCode;
 import com.hanium.sololaw.domain.subscription.mapper.SubscriptionMapper;
@@ -40,12 +40,12 @@ class SubscriptionServiceTest {
         Subscription.builder()
             .id(10L)
             .userId(1L)
-            .plan(SubscriptionPlan.FREE)
+            .plan(StoragePlan.FREE)
             .status(SubscriptionStatus.ACTIVE)
             .build();
     SubscriptionResponse expected =
         SubscriptionResponse.builder()
-            .plan(SubscriptionPlan.FREE)
+            .plan(StoragePlan.FREE)
             .status(SubscriptionStatus.ACTIVE)
             .build();
     when(subscriptionRepository.findByUserId(1L)).thenReturn(Optional.of(subscription));
