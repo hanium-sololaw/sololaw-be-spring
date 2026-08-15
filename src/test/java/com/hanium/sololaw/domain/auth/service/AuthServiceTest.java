@@ -36,8 +36,11 @@ import com.hanium.sololaw.domain.auth.exception.AuthErrorCode;
 import com.hanium.sololaw.domain.auth.mapper.AuthMapper;
 import com.hanium.sololaw.domain.notification.entity.NotificationSetting;
 import com.hanium.sololaw.domain.notification.repository.NotificationSettingRepository;
+import com.hanium.sololaw.domain.precedentsubscription.entity.PrecedentSubscription;
+import com.hanium.sololaw.domain.precedentsubscription.entity.enums.PrecedentSearchPlan;
+import com.hanium.sololaw.domain.precedentsubscription.repository.PrecedentSubscriptionRepository;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
-import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionPlan;
+import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 import com.hanium.sololaw.domain.subscription.repository.SubscriptionRepository;
 import com.hanium.sololaw.domain.user.entity.User;
@@ -59,6 +62,7 @@ class AuthServiceTest {
   @Mock private UserDetailsService userDetailsService;
   @Mock private UserRepository userRepository;
   @Mock private SubscriptionRepository subscriptionRepository;
+  @Mock private PrecedentSubscriptionRepository precedentSubscriptionRepository;
   @Mock private NotificationSettingRepository notificationSettingRepository;
   @Mock private PasswordEncoder passwordEncoder;
   @Mock private AuthMapper authMapper;
@@ -87,6 +91,7 @@ class AuthServiceTest {
             userDetailsService,
             userRepository,
             subscriptionRepository,
+            precedentSubscriptionRepository,
             notificationSettingRepository,
             passwordEncoder,
             authMapper);
@@ -123,11 +128,20 @@ class AuthServiceTest {
     verify(subscriptionRepository).save(subscriptionCaptor.capture());
     Subscription savedSubscription = subscriptionCaptor.getValue();
     assertThat(savedSubscription.getUserId()).isEqualTo(1L);
-    assertThat(savedSubscription.getPlan()).isEqualTo(SubscriptionPlan.FREE);
+    assertThat(savedSubscription.getPlan()).isEqualTo(StoragePlan.FREE);
     assertThat(savedSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
     assertThat(savedSubscription.getStorageLimitBytes()).isEqualTo(FREE_STORAGE_LIMIT_BYTES);
     assertThat(savedSubscription.getUsedStorageBytes()).isZero();
     assertThat(savedSubscription.getPriceKrw()).isEqualByComparingTo(BigDecimal.ZERO);
+
+    ArgumentCaptor<PrecedentSubscription> precedentSubscriptionCaptor =
+        ArgumentCaptor.forClass(PrecedentSubscription.class);
+    verify(precedentSubscriptionRepository).save(precedentSubscriptionCaptor.capture());
+    PrecedentSubscription savedPrecedentSubscription = precedentSubscriptionCaptor.getValue();
+    assertThat(savedPrecedentSubscription.getUserId()).isEqualTo(1L);
+    assertThat(savedPrecedentSubscription.getPlan()).isEqualTo(PrecedentSearchPlan.FREE);
+    assertThat(savedPrecedentSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+    assertThat(savedPrecedentSubscription.getPriceKrw()).isEqualByComparingTo(BigDecimal.ZERO);
 
     ArgumentCaptor<NotificationSetting> settingCaptor =
         ArgumentCaptor.forClass(NotificationSetting.class);
