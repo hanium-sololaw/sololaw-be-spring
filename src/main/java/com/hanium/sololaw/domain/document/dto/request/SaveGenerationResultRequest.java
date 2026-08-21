@@ -6,9 +6,8 @@ package com.hanium.sololaw.domain.document.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import tools.jackson.databind.JsonNode;
 
 @Schema(description = "AI 생성 결과 저장 요청 DTO(RAG done 이벤트를 프론트가 그대로 전달)")
 public record SaveGenerationResultRequest(

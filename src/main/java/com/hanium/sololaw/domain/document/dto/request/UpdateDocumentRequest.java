@@ -3,9 +3,8 @@
  */
 package com.hanium.sololaw.domain.document.dto.request;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import tools.jackson.databind.JsonNode;
 
 @Schema(description = "문서 초안 수정 요청 DTO (null인 필드는 변경하지 않음)")
 public record UpdateDocumentRequest(

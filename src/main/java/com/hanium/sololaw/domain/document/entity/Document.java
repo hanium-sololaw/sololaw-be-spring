@@ -10,7 +10,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hanium.sololaw.domain.document.entity.enums.ApplicationSubtype;
 import com.hanium.sololaw.domain.document.entity.enums.DocType;
 import com.hanium.sololaw.domain.document.entity.enums.DocumentStatus;
@@ -64,17 +63,17 @@ public class Document extends BaseTimeEntity {
   private String fileUrl;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  private JsonNode content;
+  private String content;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  private JsonNode generatedContent;
+  private String generatedContent;
 
   @Column(columnDefinition = "TEXT")
   private String generatedText;
 
   private LocalDateTime generatedAt;
 
-  public void updateDraft(String title, JsonNode content) {
+  public void updateDraft(String title, String content) {
     this.title = title;
     this.content = content;
   }
@@ -83,7 +82,7 @@ public class Document extends BaseTimeEntity {
     this.isLatest = isLatest;
   }
 
-  public void saveResult(JsonNode generatedContent, String generatedText, String fileUrl) {
+  public void saveResult(String generatedContent, String generatedText, String fileUrl) {
     this.generatedContent = generatedContent;
     this.generatedText = generatedText;
     this.fileUrl = fileUrl;

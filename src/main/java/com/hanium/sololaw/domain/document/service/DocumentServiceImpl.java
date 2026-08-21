@@ -183,7 +183,9 @@ public class DocumentServiceImpl implements DocumentService {
     */
     document.updateDraft(
         request.title() != null ? request.title() : document.getTitle(),
-        request.content() != null ? request.content() : document.getContent());
+        request.content() != null
+            ? documentMapper.toJson(request.content())
+            : document.getContent());
 
     /*
        4. ResponseDto Mapping
@@ -219,7 +221,8 @@ public class DocumentServiceImpl implements DocumentService {
        3. 생성 결과 저장
        - generated_content/generated_text/file_url을 채우고 generated_at을 기록해 확정한다.
     */
-    document.saveResult(request.generatedContent(), request.generatedText(), savedKey);
+    document.saveResult(
+        documentMapper.toJson(request.generatedContent()), request.generatedText(), savedKey);
 
     /*
        4. 생성 로그(선택) SUCCEEDED로 갱신

@@ -5,13 +5,13 @@ package com.hanium.sololaw.domain.document.dto.response;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hanium.sololaw.domain.document.entity.enums.ApplicationSubtype;
 import com.hanium.sololaw.domain.document.entity.enums.DocType;
 import com.hanium.sololaw.domain.document.entity.enums.DocumentStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+import tools.jackson.databind.JsonNode;
 
 @Builder
 @Schema(description = "문서 상세 응답 DTO")

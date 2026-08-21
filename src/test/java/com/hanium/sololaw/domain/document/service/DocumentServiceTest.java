@@ -18,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.hanium.sololaw.domain.cases.entity.Case;
 import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
@@ -38,6 +37,8 @@ import com.hanium.sololaw.domain.document.repository.DocumentRepository;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.exception.CustomException;
 import com.hanium.sololaw.global.storage.S3Uploader;
+
+import tools.jackson.databind.node.StringNode;
 
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
@@ -107,7 +108,7 @@ class DocumentServiceTest {
     User user = User.builder().id(1L).build();
     Document document = Document.builder().id(30L).userId(1L).build();
     SaveGenerationResultRequest request =
-        new SaveGenerationResultRequest("생성된 소장 본문", new TextNode("sections"));
+        new SaveGenerationResultRequest("생성된 소장 본문", new StringNode("sections"));
     DocumentGenerationJob job = DocumentGenerationJob.builder().id(2L).documentId(30L).build();
 
     when(documentRepository.findByIdAndUserId(30L, 1L)).thenReturn(Optional.of(document));
