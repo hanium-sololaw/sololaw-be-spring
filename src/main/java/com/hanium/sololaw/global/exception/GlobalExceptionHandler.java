@@ -5,6 +5,7 @@ package com.hanium.sololaw.global.exception;
 
 import java.util.stream.Collectors;
 
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -63,6 +64,15 @@ public class GlobalExceptionHandler {
     log.warn("[Exception] 잘못된 요청 값 입력 - {}", e.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(BaseResponse.error(HttpStatus.BAD_REQUEST.value(), "올바르지 않은 요청 값입니다."));
+  }
+
+  // 잘못된 sort 필드명 등 Spring Data JPA API 오용(클라이언트 입력 오류)
+  @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+  public ResponseEntity<BaseResponse<Object>> handleInvalidDataAccessApiUsageException(
+      InvalidDataAccessApiUsageException e) {
+    log.warn("[Exception] 잘못된 쿼리 파라미터 - {}", e.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(BaseResponse.error(HttpStatus.BAD_REQUEST.value(), "정렬(sort) 필드가 올바르지 않습니다."));
   }
 
   // 예상치 못한 예외
