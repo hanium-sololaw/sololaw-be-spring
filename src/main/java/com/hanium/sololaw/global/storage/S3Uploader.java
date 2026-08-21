@@ -12,6 +12,7 @@ import com.hanium.sololaw.global.config.property.S3Properties;
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -66,5 +67,16 @@ public class S3Uploader {
             .build();
     PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
     return presigned.url().toString();
+  }
+
+  /**
+   * 지정한 키의 객체를 S3에서 삭제합니다.
+   *
+   * @param key 삭제할 S3 객체 키
+   */
+  public void deleteObject(String key) {
+    DeleteObjectRequest request =
+        DeleteObjectRequest.builder().bucket(s3Properties.getBucket()).key(key).build();
+    s3Client.deleteObject(request);
   }
 }
