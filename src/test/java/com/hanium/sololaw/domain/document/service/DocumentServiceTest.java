@@ -7,6 +7,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
@@ -162,5 +164,28 @@ class DocumentServiceTest {
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(DocumentErrorCode.DOCUMENT_NOT_FOUND);
+  }
+
+  @Test
+  void deleteDocument_deletesS3File_whenFileUrlPresent() {
+    User user = User.builder().id(1L).build();
+    Document document =
+        Document.builder().id(50L).userId(1L).fileUrl("documents/50/key.txt").build();
+    when(documentRepository.findByIdAndUserId(50L, 1L)).thenReturn(Optional.of(document));
+
+    documentService.delete(user, 50L);
+
+    verify(s3Uploader).deleteObject("documents/50/key.txt");
+  }
+
+  @Test
+  void deleteDocument_skipsS3Delete_whenFileUrlAbsent() {
+    User user = User.builder().id(1L).build();
+    Document document = Document.builder().id(51L).userId(1L).build();
+    when(documentRepository.findByIdAndUserId(51L, 1L)).thenReturn(Optional.of(document));
+
+    documentService.delete(user, 51L);
+
+    verify(s3Uploader, never()).deleteObject(anyString());
   }
 }

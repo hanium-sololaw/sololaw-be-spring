@@ -310,7 +310,15 @@ public class DocumentServiceImpl implements DocumentService {
     Document document = findOwnedDocument(documentId, user.getId());
 
     /*
-       2. 문서 삭제
+       2. S3 파일 삭제
+       - AI 생성 결과가 있어 파일이 실제로 업로드된 경우에만 정리한다.
+    */
+    if (document.getFileUrl() != null) {
+      s3Uploader.deleteObject(document.getFileUrl());
+    }
+
+    /*
+       3. 문서 삭제
        - document_generation_jobs는 DB CASCADE 제약으로 함께 삭제된다.
     */
     documentRepository.delete(document);
