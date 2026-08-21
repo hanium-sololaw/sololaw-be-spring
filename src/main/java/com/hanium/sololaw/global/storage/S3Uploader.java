@@ -18,6 +18,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 /**
  * S3 업로드·presigned URL 발급 공통 유틸. 도메인별로 key prefix(예: {@code documents/}, {@code evidence/})만 다르게
@@ -66,6 +68,30 @@ public class S3Uploader {
             .getObjectRequest(getObjectRequest)
             .build();
     PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
+    return presigned.url().toString();
+  }
+
+  /**
+   * 지정한 키로 업로드할 수 있는 presigned PUT URL을 발급합니다. 프론트가 이 URL로 스토리지에 직접 파일을 올린다.
+   *
+   * @param key 업로드될 S3 객체 키
+   * @param contentType MIME 타입
+   * @param expiry URL 유효 기간
+   * @return presigned PUT URL
+   */
+  public String generatePresignedPutUrl(String key, String contentType, Duration expiry) {
+    PutObjectRequest putObjectRequest =
+        PutObjectRequest.builder()
+            .bucket(s3Properties.getBucket())
+            .key(key)
+            .contentType(contentType)
+            .build();
+    PutObjectPresignRequest presignRequest =
+        PutObjectPresignRequest.builder()
+            .signatureDuration(expiry)
+            .putObjectRequest(putObjectRequest)
+            .build();
+    PresignedPutObjectRequest presigned = s3Presigner.presignPutObject(presignRequest);
     return presigned.url().toString();
   }
 
