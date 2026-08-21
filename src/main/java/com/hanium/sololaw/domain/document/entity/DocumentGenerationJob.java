@@ -10,7 +10,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hanium.sololaw.domain.document.entity.enums.JobStatus;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
@@ -48,7 +47,7 @@ public class DocumentGenerationJob extends BaseTimeEntity {
   private Integer progress = 0;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  private JsonNode requestContent;
+  private String requestContent;
 
   private LocalDateTime failedAt;
 

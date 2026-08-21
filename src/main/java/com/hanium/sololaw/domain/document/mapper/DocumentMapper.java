@@ -12,8 +12,19 @@ import com.hanium.sololaw.domain.document.dto.response.DocumentDetailResponse;
 import com.hanium.sololaw.domain.document.dto.response.DocumentResponse;
 import com.hanium.sololaw.domain.document.entity.Document;
 
+import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
+/**
+ * JSONB 컬럼(content/generatedContent)은 Hibernate의 JSON 포맷 매퍼가 여전히 Jackson 2 기반이라 엔티티에는 {@code
+ * String}으로 저장하고, DTO 경계(Spring HTTP 메시지 컨버터가 쓰는 Jackson 3)에서만 {@link JsonNode}로 변환한다.
+ */
 @Component
+@RequiredArgsConstructor
 public class DocumentMapper {
+
+  private final ObjectMapper objectMapper;
 
   /**
    * @param caseId : 소속 사건 ID
@@ -28,7 +39,7 @@ public class DocumentMapper {
         .docType(request.docType())
         .applicationSubtype(request.applicationSubtype())
         .title(request.title())
-        .content(request.content())
+        .content(toJson(request.content()))
         .build();
   }
 
@@ -69,12 +80,30 @@ public class DocumentMapper {
         .title(document.getTitle())
         .status(document.getStatus())
         .isLatest(document.getIsLatest())
-        .content(document.getContent())
-        .generatedContent(document.getGeneratedContent())
+        .content(toJsonNode(document.getContent()))
+        .generatedContent(toJsonNode(document.getGeneratedContent()))
         .generatedText(document.getGeneratedText())
         .generatedAt(document.getGeneratedAt())
         .createdAt(document.getCreatedAt())
         .modifiedAt(document.getModifiedAt())
         .build();
+  }
+
+  /**
+   * DTO의 JsonNode(Jackson 3)를 엔티티 저장용 JSON 문자열로 변환합니다.
+   *
+   * @param node : 변환할 JsonNode(null이면 null 반환)
+   */
+  public String toJson(JsonNode node) {
+    return node != null ? objectMapper.writeValueAsString(node) : null;
+  }
+
+  /**
+   * 엔티티에 저장된 JSON 문자열을 DTO 응답용 JsonNode(Jackson 3)로 변환합니다.
+   *
+   * @param json : 변환할 JSON 문자열(null이면 null 반환)
+   */
+  public JsonNode toJsonNode(String json) {
+    return json != null ? objectMapper.readTree(json) : null;
   }
 }

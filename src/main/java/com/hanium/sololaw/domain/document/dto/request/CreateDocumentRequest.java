@@ -5,11 +5,11 @@ package com.hanium.sololaw.domain.document.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hanium.sololaw.domain.document.entity.enums.ApplicationSubtype;
 import com.hanium.sololaw.domain.document.entity.enums.DocType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import tools.jackson.databind.JsonNode;
 
 @Schema(description = "문서 초안 생성 요청 DTO")
 public record CreateDocumentRequest(
