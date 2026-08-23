@@ -37,6 +37,9 @@ public class PrecedentCitation extends BaseTimeEntity {
   @Column(nullable = false, length = 300)
   private String name;
 
+  @Column(name = "case_no", nullable = false, length = 100)
+  private String caseNo;
+
   @Column(length = 100)
   private String court;
 

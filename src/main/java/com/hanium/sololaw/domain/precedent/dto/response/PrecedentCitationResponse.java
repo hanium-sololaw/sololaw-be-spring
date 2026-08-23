@@ -16,6 +16,7 @@ public record PrecedentCitationResponse(
     @Schema(description = "인용 ID") Long id,
     @Schema(description = "RAG 판례일련번호") String serialId,
     @Schema(description = "사건명") String name,
+    @Schema(description = "사건번호") String caseNo,
     @Schema(description = "법원") String court,
     @Schema(description = "선고일") String decisionDate,
     @Schema(description = "판례 분류") LegalCategory category,

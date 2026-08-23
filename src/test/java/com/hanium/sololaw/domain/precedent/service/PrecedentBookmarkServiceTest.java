@@ -24,6 +24,7 @@ import com.hanium.sololaw.domain.precedent.dto.request.CreatePrecedentBookmarkRe
 import com.hanium.sololaw.domain.precedent.dto.response.PrecedentBookmarkResponse;
 import com.hanium.sololaw.domain.precedent.entity.PrecedentBookmark;
 import com.hanium.sololaw.domain.precedent.entity.enums.LegalCategory;
+import com.hanium.sololaw.domain.precedent.entity.enums.PrecedentOutcome;
 import com.hanium.sololaw.domain.precedent.exception.PrecedentErrorCode;
 import com.hanium.sololaw.domain.precedent.mapper.PrecedentBookmarkMapper;
 import com.hanium.sololaw.domain.precedent.repository.PrecedentBookmarkRepository;
@@ -46,8 +47,10 @@ class PrecedentBookmarkServiceTest {
         new CreatePrecedentBookmarkRequest(
             "2024다12345",
             "임대차보증금 반환 청구",
+            "2024다12345",
             "서울중앙지방법원",
             "2024-01-01",
+            PrecedentOutcome.WIN,
             LegalCategory.CIVIL,
             null,
             null);
@@ -73,7 +76,7 @@ class PrecedentBookmarkServiceTest {
     User user = User.builder().id(1L).build();
     CreatePrecedentBookmarkRequest request =
         new CreatePrecedentBookmarkRequest(
-            "2024다12345", "임대차보증금 반환 청구", null, null, null, null, null);
+            "2024다12345", "임대차보증금 반환 청구", "2024다12345", null, null, null, null, null, null);
     PrecedentBookmark existingBookmark =
         PrecedentBookmark.builder().id(5L).userId(1L).serialId("2024다12345").build();
 

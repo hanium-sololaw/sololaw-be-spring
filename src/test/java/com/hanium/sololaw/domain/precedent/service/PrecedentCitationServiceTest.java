@@ -48,7 +48,7 @@ class PrecedentCitationServiceTest {
     User user = User.builder().id(1L).build();
     CreatePrecedentCitationRequest request =
         new CreatePrecedentCitationRequest(
-            "2024다12345", "임대차보증금 반환 청구", null, null, null, null, null, 999L, null);
+            "2024다12345", "임대차보증금 반환 청구", "2024다12345", null, null, null, null, null, 999L, null);
     when(caseRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> precedentCitationService.create(user, request))
@@ -62,7 +62,7 @@ class PrecedentCitationServiceTest {
     User user = User.builder().id(1L).build();
     CreatePrecedentCitationRequest request =
         new CreatePrecedentCitationRequest(
-            "2024다12345", "임대차보증금 반환 청구", null, null, null, null, null, 5L, null);
+            "2024다12345", "임대차보증금 반환 청구", "2024다12345", null, null, null, null, null, 5L, null);
     Case ownedCase = Case.builder().id(5L).userId(1L).build();
     PrecedentCitation newCitation = PrecedentCitation.builder().userId(1L).caseId(5L).build();
     PrecedentCitation savedCitation =

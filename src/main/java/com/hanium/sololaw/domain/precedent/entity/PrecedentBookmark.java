@@ -6,6 +6,7 @@ package com.hanium.sololaw.domain.precedent.entity;
 import jakarta.persistence.*;
 
 import com.hanium.sololaw.domain.precedent.entity.enums.LegalCategory;
+import com.hanium.sololaw.domain.precedent.entity.enums.PrecedentOutcome;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
 import lombok.AccessLevel;
@@ -35,11 +36,18 @@ public class PrecedentBookmark extends BaseTimeEntity {
   @Column(nullable = false, length = 300)
   private String name;
 
+  @Column(name = "case_no", nullable = false, length = 100)
+  private String caseNo;
+
   @Column(length = 100)
   private String court;
 
   @Column(name = "decision_date", length = 50)
   private String decisionDate;
+
+  @Enumerated(EnumType.STRING)
+  @Column(length = 10)
+  private PrecedentOutcome outcome;
 
   @Enumerated(EnumType.STRING)
   @Column(length = 20)

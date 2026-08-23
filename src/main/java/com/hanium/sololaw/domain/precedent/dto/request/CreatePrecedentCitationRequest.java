@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record CreatePrecedentCitationRequest(
     @NotBlank @Schema(description = "RAG 판례일련번호") String serialId,
     @NotBlank @Schema(description = "사건명") String name,
+    @NotBlank @Schema(description = "사건번호(문서에 인쇄되는 값, 예: 대법원 2022다123456)") String caseNo,
     @Schema(description = "법원") String court,
     @Schema(description = "선고일(RAG 응답 원본 문자열)") String decisionDate,
     @Schema(description = "판례 분류") LegalCategory category,
