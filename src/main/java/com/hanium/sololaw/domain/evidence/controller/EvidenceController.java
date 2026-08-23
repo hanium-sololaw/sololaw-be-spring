@@ -103,6 +103,23 @@ public class EvidenceController {
     return ResponseEntity.ok(BaseResponse.success(result));
   }
 
+  @Operation(
+      summary = "[ 사용자 | 토큰 O | 다음 호증 번호 조회 ]",
+      description =
+          """
+            **Parameters**  \n
+            partyType(필수, GAP/EUL/BYEONG) \n
+            \n
+            사건·당사자지위별로 이미 저장된 증거 건수 + 1을 반환합니다. 준비서면·증거목록 AI 생성 시 \
+            호증 번호가 사건 전체에서 이어지도록 시작 번호로 사용합니다.
+            """)
+  @GetMapping("/api/cases/{caseId}/evidence/next-exhibit-no")
+  public ResponseEntity<BaseResponse<Integer>> getNextExhibitNo(
+      @CurrentUser User user, @PathVariable Long caseId, @RequestParam ExhibitParty partyType) {
+    int result = evidenceService.getNextExhibitNo(user, caseId, partyType);
+    return ResponseEntity.ok(BaseResponse.success(result));
+  }
+
   @Operation(summary = "[ 사용자 | 토큰 O | 증거 상세 조회 ]")
   @GetMapping("/api/evidence/{evidenceId}")
   public ResponseEntity<BaseResponse<EvidenceResponse>> getDetail(

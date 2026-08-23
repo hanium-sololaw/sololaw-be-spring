@@ -101,4 +101,15 @@ public interface EvidenceService {
    * @param evidenceId : 삭제할 증거 ID
    */
   void delete(User user, Long evidenceId);
+
+  /**
+   * 사건·당사자지위별 다음 호증 번호를 계산합니다(이미 저장된 증거 건수 + 1). AI 문서 생성 시 준비서면·증거목록의 호증 번호가 사건 전체에서 이어지도록 시작 번호를
+   * 알려주는 용도다.
+   *
+   * @param user : 로그인 사용자
+   * @param caseId : 소속 사건 ID
+   * @param partyType : 호증 당사자(갑/을/병)
+   * @return : 다음 호증 번호(1부터 시작)
+   */
+  int getNextExhibitNo(User user, Long caseId, ExhibitParty partyType);
 }

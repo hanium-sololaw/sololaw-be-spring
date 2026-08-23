@@ -37,4 +37,6 @@ public interface EvidenceRepository extends JpaRepository<Evidence, Long> {
       Pageable pageable);
 
   long countByFolderId(Long folderId);
+
+  long countByCaseIdAndPartyType(Long caseId, ExhibitParty partyType);
 }

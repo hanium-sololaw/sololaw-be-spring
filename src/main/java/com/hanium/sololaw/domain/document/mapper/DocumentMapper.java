@@ -11,6 +11,7 @@ import com.hanium.sololaw.domain.document.dto.request.CreateDocumentRequest;
 import com.hanium.sololaw.domain.document.dto.response.DocumentDetailResponse;
 import com.hanium.sololaw.domain.document.dto.response.DocumentResponse;
 import com.hanium.sololaw.domain.document.entity.Document;
+import com.hanium.sololaw.global.crypto.JsonFieldEncryptor;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.JsonNode;
@@ -24,7 +25,10 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class DocumentMapper {
 
+  private static final String RESIDENT_ID_FIELD = "residentId";
+
   private final ObjectMapper objectMapper;
+  private final JsonFieldEncryptor jsonFieldEncryptor;
 
   /**
    * @param caseId : 소속 사건 ID
@@ -90,20 +94,31 @@ public class DocumentMapper {
   }
 
   /**
-   * DTO의 JsonNode(Jackson 3)를 엔티티 저장용 JSON 문자열로 변환합니다.
+   * DTO의 JsonNode(Jackson 3)를 엔티티 저장용 JSON 문자열로 변환합니다. 트리 안의 {@code residentId} 값은 저장 전 AES로
+   * 암호화한다(법상 암호화 저장 대상인 주민등록번호가 소장 등 payload에 평문으로 포함될 수 있음).
    *
    * @param node : 변환할 JsonNode(null이면 null 반환)
    */
   public String toJson(JsonNode node) {
-    return node != null ? objectMapper.writeValueAsString(node) : null;
+    if (node == null) {
+      return null;
+    }
+    jsonFieldEncryptor.encryptField(node, RESIDENT_ID_FIELD);
+    return objectMapper.writeValueAsString(node);
   }
 
   /**
-   * 엔티티에 저장된 JSON 문자열을 DTO 응답용 JsonNode(Jackson 3)로 변환합니다.
+   * 엔티티에 저장된 JSON 문자열을 DTO 응답용 JsonNode(Jackson 3)로 변환합니다. 트리 안의 {@code residentId} 값은 조회 시 복호화해
+   * 돌려준다.
    *
    * @param json : 변환할 JSON 문자열(null이면 null 반환)
    */
   public JsonNode toJsonNode(String json) {
-    return json != null ? objectMapper.readTree(json) : null;
+    if (json == null) {
+      return null;
+    }
+    JsonNode node = objectMapper.readTree(json);
+    jsonFieldEncryptor.decryptField(node, RESIDENT_ID_FIELD);
+    return node;
   }
 }
