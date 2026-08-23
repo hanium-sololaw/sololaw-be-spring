@@ -17,4 +17,4 @@ public record UpdateCaseRequest(
     @Schema(description = "청구금액(원)") BigDecimal claimAmount,
     @Schema(description = "관할 법원") String court,
     @Schema(description = "사건번호") String caseNumber,
-    @Schema(description = "법원 접수 방법(전자소송/종이 제출)") FilingMethod filingMethod) {}
+    @Schema(description = "법원 접수 방법, 전자소송 또는 종이 제출") FilingMethod filingMethod) {}

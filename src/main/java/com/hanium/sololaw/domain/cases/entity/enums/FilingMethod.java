@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-@Schema(description = "법원 접수 방법(사건상세 법원 접수 정보 카드)")
+@Schema(description = "법원 접수 방법, 사건상세 법원 접수 정보 카드에서 사용")
 public enum FilingMethod {
   ELECTRONIC("전자소송"),
   PAPER("종이 제출");

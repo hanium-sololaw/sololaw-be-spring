@@ -69,7 +69,7 @@ public interface EvidenceService {
   EvidenceResponse getDetail(User user, Long evidenceId);
 
   /**
-   * 증거 메타데이터를 수정합니다(파일 자체는 교체 불가).
+   * 증거 메타데이터를 수정합니다. 파일 자체 교체는 replaceFile()을 사용한다.
    *
    * @param user : 로그인 사용자
    * @param evidenceId : 수정할 증거 ID

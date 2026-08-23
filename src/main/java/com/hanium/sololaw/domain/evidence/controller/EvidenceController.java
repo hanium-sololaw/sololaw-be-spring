@@ -112,7 +112,7 @@ public class EvidenceController {
             **Parameters**  \n
             caseId(선택), status(선택), partyType(선택), folderId(선택), isLatest(선택, 없으면 이전 버전 포함 전체 이력), page(0-base)/size/sort \n
             \n
-            caseId를 생략하면 로그인 사용자 소유 전체 사건의 증거를 대상으로 조회합니다(증빙자료 화면의 "전체 사건" 탭용).
+            caseId를 생략하면 로그인 사용자 소유 전체 사건의 증거를 대상으로 조회합니다, 증빙자료 화면의 "전체 사건" 탭에서 사용합니다.
             """)
   @GetMapping("/api/evidence")
   public ResponseEntity<BaseResponse<OffsetPageResponse<EvidenceResponse>>> getAllList(

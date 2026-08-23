@@ -23,7 +23,7 @@ public record DocumentDetailResponse(
     @Schema(description = "문서/파일명") String title,
     @Schema(description = "제출 상태") DocumentStatus status,
     @Schema(description = "최신본 여부") Boolean isLatest,
-    @Schema(description = "작성률 %(0~100)") Integer writingRate,
+    @Schema(description = "작성률 % 0~100") Integer writingRate,
     @Schema(description = "위저드 폼 입력값(입력 전용)") JsonNode content,
     @Schema(description = "AI 생성 본문 구조화") JsonNode generatedContent,
     @Schema(description = "AI 생성 본문 원문") String generatedText,

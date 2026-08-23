@@ -67,7 +67,7 @@ public class CaseMapper {
    * @param documentCount : 문서 개수
    * @param evidenceCount : 증빙자료 개수
    * @param scheduleCount : 일정 개수
-   * @param recentActivityCount : 최근 활동 개수(0 고정)
+   * @param recentActivityCount : 최근 활동 개수, 0 고정
    */
   public CaseDetailResponse toDetailResponse(
       Case caseEntity,
