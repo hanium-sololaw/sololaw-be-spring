@@ -281,6 +281,31 @@ public class EvidenceServiceImpl implements EvidenceService {
     log.info("[EvidenceService] delete() - END | evidenceId: {}", evidenceId);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public int getNextExhibitNo(User user, Long caseId, ExhibitParty partyType) {
+    log.info(
+        "[EvidenceService] getNextExhibitNo() - START | userId: {}, caseId: {}, partyType: {}",
+        user.getId(),
+        caseId,
+        partyType);
+
+    /*
+       1. 사건 소유자 검증
+    */
+    caseRepository
+        .findByIdAndUserId(caseId, user.getId())
+        .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
+
+    /*
+       2. 이미 저장된 증거 건수 + 1
+    */
+    int nextExhibitNo = (int) evidenceRepository.countByCaseIdAndPartyType(caseId, partyType) + 1;
+
+    log.info("[EvidenceService] getNextExhibitNo() - END | nextExhibitNo: {}", nextExhibitNo);
+    return nextExhibitNo;
+  }
+
   private Evidence findOwnedEvidence(Long evidenceId, Long userId) {
     return evidenceRepository
         .findByIdAndUserId(evidenceId, userId)

@@ -219,4 +219,39 @@ class EvidenceServiceTest {
     verify(s3Uploader).deleteObject("evidence/5/key.pdf");
     verify(evidenceRepository).delete(evidence);
   }
+
+  @Test
+  void getNextExhibitNo_throwsNotFound_whenCaseNotOwned() {
+    User user = User.builder().id(1L).build();
+    when(caseRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> evidenceService.getNextExhibitNo(user, 999L, ExhibitParty.GAP))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(CaseErrorCode.CASE_NOT_FOUND);
+  }
+
+  @Test
+  void getNextExhibitNo_returnsCountPlusOne() {
+    User user = User.builder().id(1L).build();
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(evidenceRepository.countByCaseIdAndPartyType(5L, ExhibitParty.GAP)).thenReturn(6L);
+
+    int result = evidenceService.getNextExhibitNo(user, 5L, ExhibitParty.GAP);
+
+    assertThat(result).isEqualTo(7);
+  }
+
+  @Test
+  void getNextExhibitNo_returnsOne_whenNoEvidenceYet() {
+    User user = User.builder().id(1L).build();
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(evidenceRepository.countByCaseIdAndPartyType(5L, ExhibitParty.EUL)).thenReturn(0L);
+
+    int result = evidenceService.getNextExhibitNo(user, 5L, ExhibitParty.EUL);
+
+    assertThat(result).isEqualTo(1);
+  }
 }

@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -56,6 +57,15 @@ public class GlobalExceptionHandler {
       MethodArgumentTypeMismatchException ex) {
     log.warn("MethodArgumentTypeMismatchException 오류 발생: {}", ex.getMessage());
     return ResponseEntity.badRequest().body(BaseResponse.error(400, "유효하지 않은 입력 요청 발생"));
+  }
+
+  // 필수 쿼리 파라미터 누락(예: @RequestParam ExhibitParty partyType)
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<BaseResponse<?>> handleMissingServletRequestParameterException(
+      MissingServletRequestParameterException ex) {
+    log.warn("MissingServletRequestParameterException 오류 발생: {}", ex.getMessage());
+    return ResponseEntity.badRequest()
+        .body(BaseResponse.error(400, "[%s] 파라미터가 필요합니다.".formatted(ex.getParameterName())));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
