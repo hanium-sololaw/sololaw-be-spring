@@ -46,6 +46,7 @@ public class CaseMapper {
         .court(caseEntity.getCourt())
         .claimAmount(caseEntity.getClaimAmount())
         .openedAt(caseEntity.getOpenedAt())
+        .filingMethod(caseEntity.getFilingMethod())
         .createdAt(caseEntity.getCreatedAt())
         .modifiedAt(caseEntity.getModifiedAt())
         .build();
@@ -59,14 +60,14 @@ public class CaseMapper {
   }
 
   /**
-   * 문서/증빙/일정/최근활동 집계는 02·03·04·08번 도메인 미구현으로 0 고정값을 받는다.
+   * 최근활동 집계는 08번 activity_logs 도메인 미구현으로 0 고정값을 받는다.
    *
    * @param caseEntity : 변환할 Case Entity
    * @param parties : 당사자 요약 목록
-   * @param documentCount : 문서 개수(0 고정)
-   * @param evidenceCount : 증빙자료 개수(0 고정)
-   * @param scheduleCount : 일정 개수(0 고정)
-   * @param recentActivityCount : 최근 활동 개수(0 고정)
+   * @param documentCount : 문서 개수
+   * @param evidenceCount : 증빙자료 개수
+   * @param scheduleCount : 일정 개수
+   * @param recentActivityCount : 최근 활동 개수, 0 고정
    */
   public CaseDetailResponse toDetailResponse(
       Case caseEntity,
@@ -85,6 +86,7 @@ public class CaseMapper {
         .court(caseEntity.getCourt())
         .claimAmount(caseEntity.getClaimAmount())
         .openedAt(caseEntity.getOpenedAt())
+        .filingMethod(caseEntity.getFilingMethod())
         .createdAt(caseEntity.getCreatedAt())
         .modifiedAt(caseEntity.getModifiedAt())
         .parties(parties)

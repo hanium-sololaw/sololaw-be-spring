@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Schema(description = "증거 제출 상태")
 public enum EvidenceStatus {
-  PENDING("대기중"),
+  PENDING("제출예정"),
   NOT_SUBMITTED("미제출"),
   SUBMITTED("제출완료"),
   NEEDS_SUPPLEMENT("보완필요");

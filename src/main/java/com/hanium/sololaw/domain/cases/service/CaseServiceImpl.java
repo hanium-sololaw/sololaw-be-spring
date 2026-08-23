@@ -28,6 +28,9 @@ import com.hanium.sololaw.domain.cases.mapper.CasePartyMapper;
 import com.hanium.sololaw.domain.cases.repository.CasePartyRepository;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
 import com.hanium.sololaw.domain.cases.repository.LitigationStageRepository;
+import com.hanium.sololaw.domain.document.repository.DocumentRepository;
+import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
+import com.hanium.sololaw.domain.schedule.repository.ScheduleRepository;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.common.OffsetPageResponse;
 import com.hanium.sololaw.global.exception.CustomException;
@@ -52,6 +55,9 @@ public class CaseServiceImpl implements CaseService {
   private final CaseRepository caseRepository;
   private final CasePartyRepository casePartyRepository;
   private final LitigationStageRepository litigationStageRepository;
+  private final DocumentRepository documentRepository;
+  private final EvidenceRepository evidenceRepository;
+  private final ScheduleRepository scheduleRepository;
   private final CaseMapper caseMapper;
   private final CasePartyMapper casePartyMapper;
 
@@ -151,11 +157,20 @@ public class CaseServiceImpl implements CaseService {
         casePartyMapper.toSummaryResponseList(casePartyRepository.findAllByCaseId(caseId));
 
     /*
-       3. ResponseDto Mapping
-       - 문서/증빙/일정/최근활동 집계는 02·03·04·08번 도메인 미구현으로 0 고정값을 사용한다.
-       - TODO: 02·03·04·08번 도메인 구현 후 실제 집계 값으로 교체한다.
+       3. 문서/증빙/일정 개수 집계
+       - 최근활동 집계는 08번 activity_logs 도메인 미구현으로 0 고정값을 사용한다.
+       - TODO: 08번 도메인 구현 후 실제 집계 값으로 교체한다.
     */
-    CaseDetailResponse result = caseMapper.toDetailResponse(caseEntity, parties, 0, 0, 0, 0);
+    int documentCount = (int) documentRepository.countByCaseId(caseId);
+    int evidenceCount = (int) evidenceRepository.countByCaseId(caseId);
+    int scheduleCount = (int) scheduleRepository.countByCaseId(caseId);
+
+    /*
+       4. ResponseDto Mapping
+    */
+    CaseDetailResponse result =
+        caseMapper.toDetailResponse(
+            caseEntity, parties, documentCount, evidenceCount, scheduleCount, 0);
 
     log.info("[CaseService] getCaseDetail() - END | caseId: {}", caseId);
     return result;
@@ -189,7 +204,8 @@ public class CaseServiceImpl implements CaseService {
         request.caseType() != null ? request.caseType() : caseEntity.getCaseType(),
         request.claimAmount() != null ? request.claimAmount() : caseEntity.getClaimAmount(),
         request.court() != null ? request.court() : caseEntity.getCourt(),
-        request.caseNumber() != null ? request.caseNumber() : caseEntity.getCaseNumber());
+        request.caseNumber() != null ? request.caseNumber() : caseEntity.getCaseNumber(),
+        request.filingMethod() != null ? request.filingMethod() : caseEntity.getFilingMethod());
 
     if (shouldSeedStages) {
       seedLitigationStages(caseId, null);

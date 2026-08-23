@@ -17,4 +17,5 @@ public record CreateDocumentRequest(
     @Schema(description = "신청서 하위 유형(docType=APPLICATION일 때만)")
         ApplicationSubtype applicationSubtype,
     @Schema(description = "문서/파일명") String title,
-    @Schema(description = "위저드 폼 입력값(입력 전용, 필드 구조는 프론트가 결정)") JsonNode content) {}
+    @Schema(description = "위저드 폼 입력값(입력 전용, 필드 구조는 프론트가 결정)") JsonNode content,
+    @Schema(description = "작성률 % 0~100, 선택, 없으면 0") Integer writingRate) {}

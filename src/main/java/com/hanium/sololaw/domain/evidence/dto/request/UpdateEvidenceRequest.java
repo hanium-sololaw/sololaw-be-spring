@@ -8,7 +8,7 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "증거 수정 요청 DTO (null인 필드는 변경하지 않음, 파일 자체는 교체 불가)")
+@Schema(description = "증거 수정 요청 DTO, null인 필드는 변경하지 않으며 파일 자체 교체는 별도 API 사용")
 public record UpdateEvidenceRequest(
     @Schema(description = "호증 표기") String exhibitNo,
     @Schema(description = "입증취지") String proofPurpose,

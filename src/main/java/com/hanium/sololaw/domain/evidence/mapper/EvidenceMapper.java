@@ -53,6 +53,7 @@ public class EvidenceMapper {
         .fileSize(evidence.getFileSize())
         .fileType(evidence.getFileType())
         .status(evidence.getStatus())
+        .isLatest(evidence.getIsLatest())
         .proofPurpose(evidence.getProofPurpose())
         .description(evidence.getDescription())
         .tags(toList(evidence.getTags()))

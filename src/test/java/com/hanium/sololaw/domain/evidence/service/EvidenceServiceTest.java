@@ -254,4 +254,53 @@ class EvidenceServiceTest {
 
     assertThat(result).isEqualTo(1);
   }
+
+  @Test
+  void replaceFile_throwsQuotaExceeded_whenReserveFails() {
+    User user = User.builder().id(1L).build();
+    Evidence previous = Evidence.builder().id(60L).caseId(5L).partyType(ExhibitParty.GAP).build();
+    com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest request =
+        new com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest(
+            "new.pdf", "evidence/5/new-key.pdf", 2000L, "PDF");
+
+    when(evidenceRepository.findByIdAndUserId(60L, 1L)).thenReturn(Optional.of(previous));
+    when(subscriptionRepository.tryReserveStorage(1L, 2000L)).thenReturn(0);
+
+    assertThatThrownBy(() -> evidenceService.replaceFile(user, 60L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(EvidenceErrorCode.STORAGE_QUOTA_EXCEEDED);
+  }
+
+  @Test
+  void replaceFile_demotesPreviousAndSavesNewLatestVersion_whenReserveSucceeds() {
+    User user = User.builder().id(1L).build();
+    Evidence previous =
+        Evidence.builder()
+            .id(60L)
+            .caseId(5L)
+            .partyType(ExhibitParty.GAP)
+            .exhibitNo("4")
+            .proofPurpose("피고가 보증금 반환을 회피한 사실 입증")
+            .build();
+    com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest request =
+        new com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest(
+            "new.pdf", "evidence/5/new-key.pdf", 2000L, "PDF");
+    Evidence savedEvidence = Evidence.builder().id(61L).caseId(5L).build();
+
+    when(evidenceRepository.findByIdAndUserId(60L, 1L)).thenReturn(Optional.of(previous));
+    when(subscriptionRepository.tryReserveStorage(1L, 2000L)).thenReturn(1);
+    when(evidenceRepository.save(org.mockito.ArgumentMatchers.any(Evidence.class)))
+        .thenReturn(savedEvidence);
+    when(evidenceMapper.toResponse(savedEvidence))
+        .thenReturn(EvidenceResponse.builder().id(61L).build());
+
+    EvidenceResponse result = evidenceService.replaceFile(user, 60L, request);
+
+    assertThat(result.id()).isEqualTo(61L);
+    assertThat(previous.getIsLatest()).isFalse();
+    // tryReserveStorage()가 clearAutomatically=true라 dirty checking만으로는 previous가 저장되지
+    // 않으므로(준영속 상태로 전환됨) 명시적 save() 호출을 반드시 거쳐야 한다.
+    verify(evidenceRepository).save(previous);
+  }
 }

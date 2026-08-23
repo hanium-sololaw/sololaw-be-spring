@@ -22,6 +22,7 @@ public record DocumentResponse(
     @Schema(description = "문서/파일명") String title,
     @Schema(description = "제출 상태") DocumentStatus status,
     @Schema(description = "최신본 여부") Boolean isLatest,
+    @Schema(description = "작성률 % 0~100") Integer writingRate,
     @Schema(description = "AI 생성 완료 시각(null이면 미생성)") LocalDateTime generatedAt,
     @Schema(description = "생성 시각") LocalDateTime createdAt,
     @Schema(description = "수정 시각") LocalDateTime modifiedAt) {}

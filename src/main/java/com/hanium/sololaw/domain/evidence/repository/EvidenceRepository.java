@@ -24,19 +24,26 @@ public interface EvidenceRepository extends JpaRepository<Evidence, Long> {
   Optional<Evidence> findByIdAndUserId(
       @Param("evidenceId") Long evidenceId, @Param("userId") Long userId);
 
+  /** caseId가 null이면 사용자 소유 전체 사건을 대상으로 조회한다(전체 사건 증빙자료 화면용). */
   @Query(
-      "SELECT e FROM Evidence e WHERE e.caseId = :caseId "
+      "SELECT e FROM Evidence e WHERE e.caseId IN (SELECT c.id FROM Case c WHERE c.userId = :userId) "
+          + "AND (:caseId IS NULL OR e.caseId = :caseId) "
           + "AND (:status IS NULL OR e.status = :status) "
           + "AND (:partyType IS NULL OR e.partyType = :partyType) "
-          + "AND (:folderId IS NULL OR e.folderId = :folderId)")
-  Page<Evidence> findAllByCaseIdAndFilters(
+          + "AND (:folderId IS NULL OR e.folderId = :folderId) "
+          + "AND (:isLatest IS NULL OR e.isLatest = :isLatest)")
+  Page<Evidence> findAllByUserIdAndFilters(
+      @Param("userId") Long userId,
       @Param("caseId") Long caseId,
       @Param("status") EvidenceStatus status,
       @Param("partyType") ExhibitParty partyType,
       @Param("folderId") Long folderId,
+      @Param("isLatest") Boolean isLatest,
       Pageable pageable);
 
   long countByFolderId(Long folderId);
 
   long countByCaseIdAndPartyType(Long caseId, ExhibitParty partyType);
+
+  long countByCaseId(Long caseId);
 }

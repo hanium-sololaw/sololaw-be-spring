@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
+import com.hanium.sololaw.domain.cases.entity.enums.FilingMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -24,5 +25,6 @@ public record CaseResponse(
     @Schema(description = "관할 법원") String court,
     @Schema(description = "청구금액(원)") BigDecimal claimAmount,
     @Schema(description = "사건 개시 시각") LocalDateTime openedAt,
+    @Schema(description = "법원 접수 방법, 전자소송 또는 종이 제출, 접수 전이면 null") FilingMethod filingMethod,
     @Schema(description = "생성 시각") LocalDateTime createdAt,
     @Schema(description = "수정 시각") LocalDateTime modifiedAt) {}

@@ -40,7 +40,7 @@ public interface CaseService {
       User user, CaseStatus status, CaseType caseType, Pageable pageable);
 
   /**
-   * 사건 상세를 조회합니다. 당사자 요약을 함께 반환하며, 문서/증빙/일정/최근활동 집계는 해당 도메인 미구현으로 0 고정값을 반환합니다.
+   * 사건 상세를 조회합니다. 당사자 요약과 문서/증빙/일정 집계를 함께 반환하며, 최근활동 집계는 08번 activity_logs 도메인 미구현으로 0 고정값을 반환합니다.
    *
    * @param user : 로그인 사용자
    * @param caseId : 조회할 사건 ID

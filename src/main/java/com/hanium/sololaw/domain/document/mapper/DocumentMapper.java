@@ -37,14 +37,18 @@ public class DocumentMapper {
    * @return : 변환된 Document Entity
    */
   public Document toEntity(Long caseId, Long userId, CreateDocumentRequest request) {
-    return Document.builder()
-        .caseId(caseId)
-        .userId(userId)
-        .docType(request.docType())
-        .applicationSubtype(request.applicationSubtype())
-        .title(request.title())
-        .content(toJson(request.content()))
-        .build();
+    Document.DocumentBuilder builder =
+        Document.builder()
+            .caseId(caseId)
+            .userId(userId)
+            .docType(request.docType())
+            .applicationSubtype(request.applicationSubtype())
+            .title(request.title())
+            .content(toJson(request.content()));
+    if (request.writingRate() != null) {
+      builder.writingRate(request.writingRate());
+    }
+    return builder.build();
   }
 
   /**
@@ -59,6 +63,7 @@ public class DocumentMapper {
         .title(document.getTitle())
         .status(document.getStatus())
         .isLatest(document.getIsLatest())
+        .writingRate(document.getWritingRate())
         .generatedAt(document.getGeneratedAt())
         .createdAt(document.getCreatedAt())
         .modifiedAt(document.getModifiedAt())
@@ -84,6 +89,7 @@ public class DocumentMapper {
         .title(document.getTitle())
         .status(document.getStatus())
         .isLatest(document.getIsLatest())
+        .writingRate(document.getWritingRate())
         .content(toJsonNode(document.getContent()))
         .generatedContent(toJsonNode(document.getGeneratedContent()))
         .generatedText(document.getGeneratedText())

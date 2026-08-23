@@ -185,7 +185,8 @@ public class DocumentServiceImpl implements DocumentService {
         request.title() != null ? request.title() : document.getTitle(),
         request.content() != null
             ? documentMapper.toJson(request.content())
-            : document.getContent());
+            : document.getContent(),
+        request.writingRate() != null ? request.writingRate() : document.getWritingRate());
 
     /*
        4. ResponseDto Mapping

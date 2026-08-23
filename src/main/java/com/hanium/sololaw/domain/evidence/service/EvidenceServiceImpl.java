@@ -15,6 +15,7 @@ import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
 import com.hanium.sololaw.domain.evidence.dto.request.CreateEvidenceRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.CreateEvidenceUploadUrlRequest;
+import com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.UpdateEvidenceRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.UpdateEvidenceStatusRequest;
 import com.hanium.sololaw.domain.evidence.dto.response.EvidenceResponse;
@@ -138,27 +139,33 @@ public class EvidenceServiceImpl implements EvidenceService {
       EvidenceStatus status,
       ExhibitParty partyType,
       Long folderId,
+      Boolean isLatest,
       Pageable pageable) {
     log.info(
-        "[EvidenceService] getList() - START | userId: {}, caseId: {}, status: {}, partyType: {}, folderId: {}",
+        "[EvidenceService] getList() - START | userId: {}, caseId: {}, status: {}, partyType: {}, folderId: {}, isLatest: {}",
         user.getId(),
         caseId,
         status,
         partyType,
-        folderId);
+        folderId,
+        isLatest);
 
     /*
        1. 사건 소유자 검증
+       - caseId가 없으면(전체 사건 조회) 건너뛴다.
     */
-    caseRepository
-        .findByIdAndUserId(caseId, user.getId())
-        .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
+    if (caseId != null) {
+      caseRepository
+          .findByIdAndUserId(caseId, user.getId())
+          .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
+    }
 
     /*
        2. 필터 조회
     */
     Page<Evidence> pageResult =
-        evidenceRepository.findAllByCaseIdAndFilters(caseId, status, partyType, folderId, pageable);
+        evidenceRepository.findAllByUserIdAndFilters(
+            user.getId(), caseId, status, partyType, folderId, isLatest, pageable);
 
     /*
        3. ResponseDto Mapping 및 OffsetPageResponse 래핑
@@ -205,7 +212,7 @@ public class EvidenceServiceImpl implements EvidenceService {
 
     /*
        2. 메타데이터 수정
-       - null인 필드는 기존 값을 유지한다(파일 자체는 교체 불가).
+       - null인 필드는 기존 값을 유지한다(파일 자체 교체는 replaceFile() 사용).
     */
     evidence.update(
         request.exhibitNo() != null ? request.exhibitNo() : evidence.getExhibitNo(),
@@ -304,6 +311,65 @@ public class EvidenceServiceImpl implements EvidenceService {
 
     log.info("[EvidenceService] getNextExhibitNo() - END | nextExhibitNo: {}", nextExhibitNo);
     return nextExhibitNo;
+  }
+
+  @Override
+  @Transactional
+  public EvidenceResponse replaceFile(
+      User user, Long evidenceId, ReplaceEvidenceFileRequest request) {
+    log.info(
+        "[EvidenceService] replaceFile() - START | userId: {}, evidenceId: {}",
+        user.getId(),
+        evidenceId);
+
+    /*
+       1. 기존 증거 조회 및 소유자 검증
+    */
+    Evidence previous = findOwnedEvidence(evidenceId, user.getId());
+
+    /*
+       2. 저장 용량 원자 예약
+       - 새 파일 크기만큼 예약한다. 이전 버전 파일은 이력 보존을 위해 유지하며 용량도 계속 점유한다.
+    */
+    int affected = subscriptionRepository.tryReserveStorage(user.getId(), request.fileSize());
+    if (affected == 0) {
+      throw new CustomException(EvidenceErrorCode.STORAGE_QUOTA_EXCEEDED);
+    }
+
+    /*
+       3. 기존 증거를 이전 버전으로 전환(isLatest=false, 실 파일은 이력 조회를 위해 삭제하지 않음)
+       - tryReserveStorage()가 clearAutomatically=true라 previous는 이미 준영속 상태이므로 명시적으로 저장한다.
+    */
+    previous.updateIsLatest(false);
+    evidenceRepository.save(previous);
+
+    /*
+       4. exhibitNo·partyType·proofPurpose 등 메타데이터를 물려받은 새 증거 저장(최신본, status는 기본값으로 초기화)
+    */
+    Evidence newEvidence =
+        Evidence.builder()
+            .caseId(previous.getCaseId())
+            .folderId(previous.getFolderId())
+            .partyType(previous.getPartyType())
+            .exhibitNo(previous.getExhibitNo())
+            .fileName(request.fileName())
+            .fileUrl(request.fileUrl())
+            .fileSize(request.fileSize())
+            .fileType(request.fileType())
+            .proofPurpose(previous.getProofPurpose())
+            .description(previous.getDescription())
+            .tags(previous.getTags())
+            .deadline(previous.getDeadline())
+            .build();
+    Evidence savedEvidence = evidenceRepository.save(newEvidence);
+
+    /*
+       5. ResponseDto Mapping
+    */
+    EvidenceResponse result = evidenceMapper.toResponse(savedEvidence);
+
+    log.info("[EvidenceService] replaceFile() - END | newEvidenceId: {}", savedEvidence.getId());
+    return result;
   }
 
   private Evidence findOwnedEvidence(Long evidenceId, Long userId) {

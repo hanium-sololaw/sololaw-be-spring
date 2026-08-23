@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
+import com.hanium.sololaw.domain.cases.entity.enums.FilingMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -25,10 +26,12 @@ public record CaseDetailResponse(
     @Schema(description = "관할 법원") String court,
     @Schema(description = "청구금액(원)") BigDecimal claimAmount,
     @Schema(description = "사건 개시 시각") LocalDateTime openedAt,
+    @Schema(description = "법원 접수 방법, 전자소송 또는 종이 제출, 접수 전이면 null") FilingMethod filingMethod,
     @Schema(description = "생성 시각") LocalDateTime createdAt,
     @Schema(description = "수정 시각") LocalDateTime modifiedAt,
     @Schema(description = "당사자 목록") List<CasePartySummaryResponse> parties,
-    @Schema(description = "문서 개수(02번 미구현, 현재 0 고정)") Integer documentCount,
-    @Schema(description = "증빙자료 개수(03번 미구현, 현재 0 고정)") Integer evidenceCount,
-    @Schema(description = "일정 개수(04번 미구현, 현재 0 고정)") Integer scheduleCount,
-    @Schema(description = "최근 활동 개수(08번 미구현, 현재 0 고정)") Integer recentActivityCount) {}
+    @Schema(description = "문서 개수") Integer documentCount,
+    @Schema(description = "증빙자료 개수") Integer evidenceCount,
+    @Schema(description = "일정 개수") Integer scheduleCount,
+    @Schema(description = "최근 활동 개수, 08번 activity_logs 미구현으로 현재 0 고정")
+        Integer recentActivityCount) {}

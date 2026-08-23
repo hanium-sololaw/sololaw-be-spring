@@ -59,6 +59,10 @@ public class Document extends BaseTimeEntity {
   @Column(nullable = false)
   private Boolean isLatest = true;
 
+  @Builder.Default
+  @Column(nullable = false)
+  private Integer writingRate = 0;
+
   @Column(length = 500)
   private String fileUrl;
 
@@ -73,9 +77,10 @@ public class Document extends BaseTimeEntity {
 
   private LocalDateTime generatedAt;
 
-  public void updateDraft(String title, String content) {
+  public void updateDraft(String title, String content, Integer writingRate) {
     this.title = title;
     this.content = content;
+    this.writingRate = writingRate;
   }
 
   public void updateIsLatest(boolean isLatest) {

@@ -21,6 +21,8 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
   Optional<Document> findByCaseIdAndDocTypeAndIsLatestTrue(Long caseId, DocType docType);
 
+  long countByCaseId(Long caseId);
+
   @Query(
       "SELECT d FROM Document d WHERE d.userId = :userId "
           + "AND (:caseId IS NULL OR d.caseId = :caseId) "
