@@ -11,5 +11,4 @@ import lombok.Builder;
 public record NotificationSettingResponse(
     @Schema(description = "변론기일 리마인더(기일 3일 전, 1일 전) 알림 여부") Boolean hearingReminderAlert,
     @Schema(description = "제출 기한 알림(준비서면·증거 제출 기한 임박 시) 여부") Boolean submissionDeadlineAlert,
-    @Schema(description = "상대방 서면 제출 알림(답변서·준비서면 제출 시) 여부") Boolean opponentFilingAlert,
     @Schema(description = "유사 판례 업데이트(새 판례 발견 시) 알림 여부") Boolean aiPrecedentAlert) {}
