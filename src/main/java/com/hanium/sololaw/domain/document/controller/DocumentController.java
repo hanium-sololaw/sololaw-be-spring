@@ -53,7 +53,7 @@ public class DocumentController {
       description =
           """
             **Parameters**  \n
-            docType(ANSWER 포함), applicationSubtype(선택), title(선택), content(JSONB 폼 입력) \n
+            docType(ANSWER 포함), applicationSubtype(선택), title(선택), content(JSONB 폼 입력), writingRate(선택, 0~100) \n
             \n
             같은 사건·같은 docType의 기존 최신본은 isLatest=false로 내려갑니다.
             """)
@@ -99,7 +99,7 @@ public class DocumentController {
       description =
           """
             **Parameters**  \n
-            title, content (null인 필드는 변경하지 않음) \n
+            title, content, writingRate(0~100) (null인 필드는 변경하지 않음) \n
             \n
             생성 로그가 RUNNING 상태면 409로 거절됩니다.
             """)

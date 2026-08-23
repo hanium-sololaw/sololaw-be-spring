@@ -58,7 +58,7 @@ class DocumentServiceTest {
   void createDraft_demotesPreviousLatest_whenSameCaseAndDocType() {
     User user = User.builder().id(1L).build();
     CreateDocumentRequest request =
-        new CreateDocumentRequest(DocType.COMPLAINT, null, "임대차보증금 반환 소장", null);
+        new CreateDocumentRequest(DocType.COMPLAINT, null, "임대차보증금 반환 소장", null, null);
     Case ownedCase = Case.builder().id(5L).userId(1L).build();
     Document previousLatest =
         Document.builder().id(10L).caseId(5L).docType(DocType.COMPLAINT).isLatest(true).build();
@@ -81,7 +81,8 @@ class DocumentServiceTest {
   @Test
   void createDraft_throwsNotFound_whenCaseNotOwned() {
     User user = User.builder().id(1L).build();
-    CreateDocumentRequest request = new CreateDocumentRequest(DocType.ANSWER, null, "답변서", null);
+    CreateDocumentRequest request =
+        new CreateDocumentRequest(DocType.ANSWER, null, "답변서", null, null);
     when(caseRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> documentService.createDraft(user, 999L, request))
@@ -94,7 +95,7 @@ class DocumentServiceTest {
   void updateDraft_throwsLocked_whenRunningJobExists() {
     User user = User.builder().id(1L).build();
     Document document = Document.builder().id(20L).userId(1L).build();
-    UpdateDocumentRequest request = new UpdateDocumentRequest("제목", null);
+    UpdateDocumentRequest request = new UpdateDocumentRequest("제목", null, null);
     when(documentRepository.findByIdAndUserId(20L, 1L)).thenReturn(Optional.of(document));
     when(documentGenerationJobRepository.findByDocumentIdAndStatus(20L, JobStatus.RUNNING))
         .thenReturn(Optional.of(DocumentGenerationJob.builder().id(1L).build()));
