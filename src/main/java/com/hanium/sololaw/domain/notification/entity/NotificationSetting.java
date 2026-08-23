@@ -38,10 +38,6 @@ public class NotificationSetting extends BaseTimeEntity {
 
   @Builder.Default
   @Column(nullable = false)
-  private Boolean opponentFilingAlert = true;
-
-  @Builder.Default
-  @Column(nullable = false)
   private Boolean aiPrecedentAlert = false;
 
   /**
@@ -49,17 +45,12 @@ public class NotificationSetting extends BaseTimeEntity {
    *
    * @param hearingReminderAlert 변론기일 리마인더(기일 3일 전, 1일 전) 알림 여부
    * @param submissionDeadlineAlert 제출 기한 알림(준비서면·증거 제출 기한 임박 시) 여부
-   * @param opponentFilingAlert 상대방 서면 제출 알림(답변서·준비서면 제출 시) 여부
    * @param aiPrecedentAlert 유사 판례 업데이트(새 판례 발견 시) 알림 여부
    */
   public void updateSettings(
-      Boolean hearingReminderAlert,
-      Boolean submissionDeadlineAlert,
-      Boolean opponentFilingAlert,
-      Boolean aiPrecedentAlert) {
+      Boolean hearingReminderAlert, Boolean submissionDeadlineAlert, Boolean aiPrecedentAlert) {
     if (hearingReminderAlert != null) this.hearingReminderAlert = hearingReminderAlert;
     if (submissionDeadlineAlert != null) this.submissionDeadlineAlert = submissionDeadlineAlert;
-    if (opponentFilingAlert != null) this.opponentFilingAlert = opponentFilingAlert;
     if (aiPrecedentAlert != null) this.aiPrecedentAlert = aiPrecedentAlert;
   }
 

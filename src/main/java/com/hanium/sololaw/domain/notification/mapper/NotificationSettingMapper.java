@@ -18,7 +18,6 @@ public class NotificationSettingMapper {
     return NotificationSettingResponse.builder()
         .hearingReminderAlert(setting.getHearingReminderAlert())
         .submissionDeadlineAlert(setting.getSubmissionDeadlineAlert())
-        .opponentFilingAlert(setting.getOpponentFilingAlert())
         .aiPrecedentAlert(setting.getAiPrecedentAlert())
         .build();
   }
