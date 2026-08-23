@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.hanium.sololaw.domain.evidence.dto.request.CreateEvidenceRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.CreateEvidenceUploadUrlRequest;
+import com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.UpdateEvidenceRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.UpdateEvidenceStatusRequest;
 import com.hanium.sololaw.domain.evidence.dto.response.EvidenceResponse;
@@ -38,13 +39,14 @@ public interface EvidenceService {
   EvidenceResponse createEvidence(User user, Long caseId, CreateEvidenceRequest request);
 
   /**
-   * 사건별 증거 목록을 조회합니다.
+   * 증거 목록을 조회합니다. caseId가 없으면 사용자 소유 전체 사건을 대상으로 조회한다(전체 사건 증빙자료 화면용).
    *
    * @param user : 로그인 사용자
-   * @param caseId : 소속 사건 ID
+   * @param caseId : 소속 사건 ID(선택, 없으면 전체 사건 대상)
    * @param status : 제출 상태 필터(선택)
    * @param partyType : 호증 당사자 필터(선택)
    * @param folderId : 폴더 필터(선택)
+   * @param isLatest : 최신본 여부 필터(선택, 없으면 전체 이력 포함)
    * @param pageable : page(0-base)/size/sort 쿼리 파라미터 바인딩
    * @return : OffsetPageResponse<EvidenceResponse>
    */
@@ -54,6 +56,7 @@ public interface EvidenceService {
       EvidenceStatus status,
       ExhibitParty partyType,
       Long folderId,
+      Boolean isLatest,
       Pageable pageable);
 
   /**
@@ -101,6 +104,17 @@ public interface EvidenceService {
    * @param evidenceId : 삭제할 증거 ID
    */
   void delete(User user, Long evidenceId);
+
+  /**
+   * 증거 파일을 교체합니다. 기존 증거는 isLatest=false로 내려가고(이전 버전 이력으로 보존), exhibitNo·partyType·proofPurpose 등
+   * 메타데이터를 물려받은 새 증거가 isLatest=true로 등록됩니다. 저장 용량은 새 파일 크기만큼 원자적으로 예약합니다.
+   *
+   * @param user : 로그인 사용자
+   * @param evidenceId : 교체할(구 버전이 될) 증거 ID
+   * @param request : 교체 요청(새 파일 정보)
+   * @return : 새로 등록된 최신 버전의 EvidenceResponse
+   */
+  EvidenceResponse replaceFile(User user, Long evidenceId, ReplaceEvidenceFileRequest request);
 
   /**
    * 사건·당사자지위별 다음 호증 번호를 계산합니다(이미 저장된 증거 건수 + 1). AI 문서 생성 시 준비서면·증거목록의 호증 번호가 사건 전체에서 이어지도록 시작 번호를

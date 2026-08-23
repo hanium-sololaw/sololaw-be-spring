@@ -62,6 +62,10 @@ public class Evidence extends BaseTimeEntity {
   @Column(nullable = false, length = 20)
   private EvidenceStatus status = EvidenceStatus.PENDING;
 
+  @Builder.Default
+  @Column(nullable = false)
+  private Boolean isLatest = true;
+
   @Column(columnDefinition = "TEXT")
   private String proofPurpose;
 
@@ -96,5 +100,9 @@ public class Evidence extends BaseTimeEntity {
     if (status == EvidenceStatus.SUBMITTED) {
       this.submittedAt = LocalDateTime.now();
     }
+  }
+
+  public void updateIsLatest(boolean isLatest) {
+    this.isLatest = isLatest;
   }
 }

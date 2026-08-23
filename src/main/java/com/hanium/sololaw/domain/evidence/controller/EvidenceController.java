@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hanium.sololaw.domain.evidence.dto.request.CreateEvidenceRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.CreateEvidenceUploadUrlRequest;
+import com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.UpdateEvidenceRequest;
 import com.hanium.sololaw.domain.evidence.dto.request.UpdateEvidenceStatusRequest;
 import com.hanium.sololaw.domain.evidence.dto.response.EvidenceResponse;
@@ -88,7 +89,7 @@ public class EvidenceController {
       description =
           """
             **Parameters**  \n
-            status(선택), partyType(선택), folderId(선택), page(0-base)/size/sort \n
+            status(선택), partyType(선택), folderId(선택), isLatest(선택, 없으면 이전 버전 포함 전체 이력), page(0-base)/size/sort \n
             """)
   @GetMapping("/api/cases/{caseId}/evidence")
   public ResponseEntity<BaseResponse<OffsetPageResponse<EvidenceResponse>>> getList(
@@ -97,9 +98,33 @@ public class EvidenceController {
       @RequestParam(required = false) EvidenceStatus status,
       @RequestParam(required = false) ExhibitParty partyType,
       @RequestParam(required = false) Long folderId,
+      @RequestParam(required = false) Boolean isLatest,
       @PageableDefault(size = 20) Pageable pageable) {
     OffsetPageResponse<EvidenceResponse> result =
-        evidenceService.getList(user, caseId, status, partyType, folderId, pageable);
+        evidenceService.getList(user, caseId, status, partyType, folderId, isLatest, pageable);
+    return ResponseEntity.ok(BaseResponse.success(result));
+  }
+
+  @Operation(
+      summary = "[ 사용자 | 토큰 O | 내 증거 목록 조회(전체 사건) ]",
+      description =
+          """
+            **Parameters**  \n
+            caseId(선택), status(선택), partyType(선택), folderId(선택), isLatest(선택, 없으면 이전 버전 포함 전체 이력), page(0-base)/size/sort \n
+            \n
+            caseId를 생략하면 로그인 사용자 소유 전체 사건의 증거를 대상으로 조회합니다(증빙자료 화면의 "전체 사건" 탭용).
+            """)
+  @GetMapping("/api/evidence")
+  public ResponseEntity<BaseResponse<OffsetPageResponse<EvidenceResponse>>> getAllList(
+      @CurrentUser User user,
+      @RequestParam(required = false) Long caseId,
+      @RequestParam(required = false) EvidenceStatus status,
+      @RequestParam(required = false) ExhibitParty partyType,
+      @RequestParam(required = false) Long folderId,
+      @RequestParam(required = false) Boolean isLatest,
+      @PageableDefault(size = 20) Pageable pageable) {
+    OffsetPageResponse<EvidenceResponse> result =
+        evidenceService.getList(user, caseId, status, partyType, folderId, isLatest, pageable);
     return ResponseEntity.ok(BaseResponse.success(result));
   }
 
@@ -131,13 +156,32 @@ public class EvidenceController {
   @Operation(
       summary = "[ 사용자 | 토큰 O | 증거 수정 ]",
       description =
-          "exhibitNo, proofPurpose, description, tags, deadline (null인 필드는 변경하지 않음, 파일 자체는 교체 불가)")
+          "exhibitNo, proofPurpose, description, tags, deadline (null인 필드는 변경하지 않음, 파일 자체 교체는 별도 API 사용)")
   @PatchMapping("/api/evidence/{evidenceId}")
   public ResponseEntity<BaseResponse<EvidenceResponse>> update(
       @CurrentUser User user,
       @PathVariable Long evidenceId,
       @Valid @RequestBody UpdateEvidenceRequest request) {
     EvidenceResponse result = evidenceService.update(user, evidenceId, request);
+    return ResponseEntity.ok(BaseResponse.success(result));
+  }
+
+  @Operation(
+      summary = "[ 사용자 | 토큰 O | 증거 파일 교체 ]",
+      description =
+          """
+            **Parameters**  \n
+            fileName, fileUrl(upload-url 발급 시 받은 key), fileSize, fileType(선택) \n
+            \n
+            기존 증거는 isLatest=false로 전환되어 이전 버전 이력으로 남고, exhibitNo·partyType·proofPurpose 등 메타데이터를 \
+            물려받은 새 증거가 최신본으로 등록됩니다. 저장 용량은 새 파일 크기만큼 원자적으로 예약하며 초과 시 413을 반환합니다.
+            """)
+  @PostMapping("/api/evidence/{evidenceId}/replace")
+  public ResponseEntity<BaseResponse<EvidenceResponse>> replaceFile(
+      @CurrentUser User user,
+      @PathVariable Long evidenceId,
+      @Valid @RequestBody ReplaceEvidenceFileRequest request) {
+    EvidenceResponse result = evidenceService.replaceFile(user, evidenceId, request);
     return ResponseEntity.ok(BaseResponse.success(result));
   }
 

@@ -25,6 +25,7 @@ public record EvidenceResponse(
     @Schema(description = "파일 크기(바이트)") Long fileSize,
     @Schema(description = "파일 타입") String fileType,
     @Schema(description = "제출 상태") EvidenceStatus status,
+    @Schema(description = "최신본 여부(false면 교체되어 이전 버전으로 보존된 이력)") Boolean isLatest,
     @Schema(description = "입증취지") String proofPurpose,
     @Schema(description = "설명") String description,
     @Schema(description = "태그 목록") List<String> tags,
