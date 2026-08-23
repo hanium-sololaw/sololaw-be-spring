@@ -100,7 +100,7 @@ public class CaseController {
       description =
           """
             **Parameters**  \n
-            title, caseType, claimAmount, court, caseNumber (null인 필드는 변경하지 않음) \n
+            title, caseType, claimAmount, court, caseNumber, filingMethod(전자소송/종이 제출) (null인 필드는 변경하지 않음) \n
             \n
             caseType이 미정(null)에서 값으로 처음 채워지면 그 시점에 표준 절차 6단계가 1단계부터 자동 시드됩니다.
             """)

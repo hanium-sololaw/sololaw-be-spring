@@ -33,4 +33,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
       @Param("to") LocalDate to);
 
   List<Schedule> findAllByReminderEnabledTrueAndReminderSentAtIsNull();
+
+  long countByCaseId(Long caseId);
 }

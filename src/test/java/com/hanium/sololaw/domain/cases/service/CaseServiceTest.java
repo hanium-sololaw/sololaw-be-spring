@@ -113,7 +113,7 @@ class CaseServiceTest {
   void updateCase_seedsStagesFromOrderOne_whenCaseTypeTransitionsFromNullToValue() {
     User user = User.builder().id(1L).build();
     Case existingCase = Case.builder().id(5L).userId(1L).caseType(null).title("old").build();
-    UpdateCaseRequest request = new UpdateCaseRequest(null, CaseType.WAGE, null, null, null);
+    UpdateCaseRequest request = new UpdateCaseRequest(null, CaseType.WAGE, null, null, null, null);
     when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existingCase));
     when(caseMapper.toResponse(existingCase)).thenReturn(CaseResponse.builder().id(5L).build());
 
@@ -130,7 +130,7 @@ class CaseServiceTest {
     User user = User.builder().id(1L).build();
     Case existingCase =
         Case.builder().id(5L).userId(1L).caseType(CaseType.WAGE).title("old").build();
-    UpdateCaseRequest request = new UpdateCaseRequest(null, CaseType.TORT, null, null, null);
+    UpdateCaseRequest request = new UpdateCaseRequest(null, CaseType.TORT, null, null, null, null);
     when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existingCase));
     when(caseMapper.toResponse(existingCase)).thenReturn(CaseResponse.builder().id(5L).build());
 

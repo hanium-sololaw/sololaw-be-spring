@@ -10,6 +10,7 @@ import jakarta.persistence.*;
 
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
+import com.hanium.sololaw.domain.cases.entity.enums.FilingMethod;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
 import lombok.AccessLevel;
@@ -60,13 +61,23 @@ public class Case extends BaseTimeEntity {
 
   private LocalDateTime openedAt;
 
+  @Enumerated(EnumType.STRING)
+  @Column(length = 20)
+  private FilingMethod filingMethod;
+
   public void update(
-      String title, CaseType caseType, BigDecimal claimAmount, String court, String caseNumber) {
+      String title,
+      CaseType caseType,
+      BigDecimal claimAmount,
+      String court,
+      String caseNumber,
+      FilingMethod filingMethod) {
     this.title = title;
     this.caseType = caseType;
     this.claimAmount = claimAmount;
     this.court = court;
     this.caseNumber = caseNumber;
+    this.filingMethod = filingMethod;
   }
 
   public void updateStatus(CaseStatus status) {
