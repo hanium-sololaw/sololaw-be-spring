@@ -101,6 +101,21 @@ class ScheduleServiceTest {
   }
 
   @Test
+  void getList_substitutesSentinelDateRange_whenFromAndToAreNull() {
+    User user = User.builder().id(1L).build();
+    LocalDate minDate = LocalDate.of(1, 1, 1);
+    LocalDate maxDate = LocalDate.of(9999, 12, 31);
+    when(scheduleRepository.findAllByUserIdAndFilters(1L, null, null, minDate, maxDate))
+        .thenReturn(List.of());
+    when(scheduleMapper.toResponseList(List.of())).thenReturn(List.of());
+
+    List<ScheduleResponse> result = scheduleService.getList(user, null, null, null, null);
+
+    assertThat(result).isEmpty();
+    verify(scheduleRepository).findAllByUserIdAndFilters(1L, null, null, minDate, maxDate);
+  }
+
+  @Test
   void getDetail_throwsNotFound_whenNotOwned() {
     User user = User.builder().id(1L).build();
     when(scheduleRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());

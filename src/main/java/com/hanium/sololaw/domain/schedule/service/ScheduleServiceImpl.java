@@ -30,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ScheduleServiceImpl implements ScheduleService {
 
+  private static final LocalDate MIN_SCHEDULE_DATE = LocalDate.of(1, 1, 1);
+  private static final LocalDate MAX_SCHEDULE_DATE = LocalDate.of(9999, 12, 31);
+
   private final CaseRepository caseRepository;
   private final ScheduleRepository scheduleRepository;
   private final ScheduleMapper scheduleMapper;
@@ -78,8 +81,16 @@ public class ScheduleServiceImpl implements ScheduleService {
         from,
         to);
 
+    /*
+       from·to가 없으면 사실상 무제한 범위인 임의 하한·상한으로 채운다, null을 그대로 바인딩하면 Postgres가
+       CAST(? AS date)의 파라미터 타입을 잘못 추론해 500이 나는 것을 로컬 검증 중 확인했다.
+       LocalDate.MIN·MAX는 Postgres date 타입의 유효 범위(기원전 4713년~서기 5874897년)를 벗어나 그대로 못 쓴다.
+    */
+    LocalDate rangeFrom = from != null ? from : MIN_SCHEDULE_DATE;
+    LocalDate rangeTo = to != null ? to : MAX_SCHEDULE_DATE;
     List<Schedule> schedules =
-        scheduleRepository.findAllByUserIdAndFilters(user.getId(), caseId, scheduleType, from, to);
+        scheduleRepository.findAllByUserIdAndFilters(
+            user.getId(), caseId, scheduleType, rangeFrom, rangeTo);
     List<ScheduleResponse> result = scheduleMapper.toResponseList(schedules);
 
     log.info("[ScheduleService] getList() - END | count: {}", result.size());

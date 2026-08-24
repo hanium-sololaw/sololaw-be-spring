@@ -18,12 +18,16 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
   Optional<Schedule> findByIdAndUserId(Long id, Long userId);
 
+  /**
+   * from·to는 null을 바로 바인딩하지 않는다, CAST(:param AS date) IS NULL 패턴이 Postgres에서 파라미터 타입을 bytea로 잘못 추론해
+   * cannot cast type bytea to date 오류로 이어지는 것을 로컬 검증 중 확인했다. 호출부에서 필터가 없을 때 LocalDate.MIN·MAX를 채워
+   * 넘긴다.
+   */
   @Query(
       "SELECT s FROM Schedule s WHERE s.userId = :userId "
           + "AND (:caseId IS NULL OR s.caseId = :caseId) "
           + "AND (:scheduleType IS NULL OR s.scheduleType = :scheduleType) "
-          + "AND (CAST(:from AS date) IS NULL OR s.eventDate >= CAST(:from AS date)) "
-          + "AND (CAST(:to AS date) IS NULL OR s.eventDate <= CAST(:to AS date)) "
+          + "AND s.eventDate >= :from AND s.eventDate <= :to "
           + "ORDER BY s.eventDate ASC")
   List<Schedule> findAllByUserIdAndFilters(
       @Param("userId") Long userId,
