@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.gateway;
+package com.hanium.sololaw.domain.payment.gateway;
 
 /**
  * 결제 시작 정보. clientKey/redirectUrl 중 활성 PG가 채우지 않는 필드는 null이다(Toss는 clientKey만, Stripe Checkout류는

@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.gateway;
+package com.hanium.sololaw.domain.payment.gateway;
 
 import java.time.LocalDateTime;
 

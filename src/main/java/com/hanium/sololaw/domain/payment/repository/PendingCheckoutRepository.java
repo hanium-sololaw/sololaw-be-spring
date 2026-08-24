@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.repository;
+package com.hanium.sololaw.domain.payment.repository;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;

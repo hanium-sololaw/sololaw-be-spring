@@ -20,24 +20,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.hanium.sololaw.domain.payment.entity.Payment;
+import com.hanium.sololaw.domain.payment.entity.enums.PaymentProvider;
+import com.hanium.sololaw.domain.payment.entity.enums.SubscriptionType;
+import com.hanium.sololaw.domain.payment.gateway.PaymentCheckoutCommand;
+import com.hanium.sololaw.domain.payment.gateway.PaymentCheckoutInfo;
+import com.hanium.sololaw.domain.payment.gateway.PaymentConfirmation;
+import com.hanium.sololaw.domain.payment.gateway.PaymentGateway;
+import com.hanium.sololaw.domain.payment.repository.PaymentRepository;
+import com.hanium.sololaw.domain.payment.repository.PendingCheckout;
+import com.hanium.sololaw.domain.payment.repository.PendingCheckoutRepository;
 import com.hanium.sololaw.domain.subscription.dto.request.CheckoutRequest;
 import com.hanium.sololaw.domain.subscription.dto.request.ConfirmRequest;
 import com.hanium.sololaw.domain.subscription.dto.response.CheckoutResponse;
 import com.hanium.sololaw.domain.subscription.dto.response.SubscriptionResponse;
-import com.hanium.sololaw.domain.subscription.entity.Payment;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
-import com.hanium.sololaw.domain.subscription.entity.enums.PaymentProvider;
 import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 import com.hanium.sololaw.domain.subscription.exception.SubscriptionErrorCode;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentCheckoutCommand;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentCheckoutInfo;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentConfirmation;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentGateway;
 import com.hanium.sololaw.domain.subscription.mapper.SubscriptionMapper;
-import com.hanium.sololaw.domain.subscription.repository.PaymentRepository;
-import com.hanium.sololaw.domain.subscription.repository.PendingCheckout;
-import com.hanium.sololaw.domain.subscription.repository.PendingCheckoutRepository;
 import com.hanium.sololaw.domain.subscription.repository.SubscriptionRepository;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.exception.CustomException;
@@ -146,7 +147,9 @@ class SubscriptionServiceTest {
     assertThat(result.orderId()).startsWith("SUB-");
     assertThat(result.clientKey()).isEqualTo("test_ck");
     verify(pendingCheckoutRepository)
-        .save(eq(result.orderId()), eq(new PendingCheckout(1L, StoragePlan.STANDARD, 12900)));
+        .save(
+            eq(result.orderId()),
+            eq(new PendingCheckout(1L, SubscriptionType.STORAGE, "STANDARD", 12900)));
   }
 
   @Test
@@ -165,7 +168,23 @@ class SubscriptionServiceTest {
   void confirm_throwsInvalidSession_whenOwnerMismatch() {
     User user = User.builder().id(1L).build();
     when(pendingCheckoutRepository.find("SUB-abc"))
-        .thenReturn(Optional.of(new PendingCheckout(2L, StoragePlan.STANDARD, 12900)));
+        .thenReturn(
+            Optional.of(new PendingCheckout(2L, SubscriptionType.STORAGE, "STANDARD", 12900)));
+    ConfirmRequest request = new ConfirmRequest("paymentKey", "SUB-abc", 12900L);
+
+    assertThatThrownBy(() -> subscriptionService.confirm(user, request))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(SubscriptionErrorCode.INVALID_CHECKOUT_SESSION);
+  }
+
+  @Test
+  void confirm_throwsInvalidSession_whenSubscriptionTypeMismatch() {
+    User user = User.builder().id(1L).build();
+    when(pendingCheckoutRepository.find("SUB-abc"))
+        .thenReturn(
+            Optional.of(
+                new PendingCheckout(1L, SubscriptionType.PRECEDENT_SEARCH, "PREMIUM", 12900)));
     ConfirmRequest request = new ConfirmRequest("paymentKey", "SUB-abc", 12900L);
 
     assertThatThrownBy(() -> subscriptionService.confirm(user, request))
@@ -178,7 +197,8 @@ class SubscriptionServiceTest {
   void confirm_throwsAmountMismatch_whenAmountDiffersFromPendingSession() {
     User user = User.builder().id(1L).build();
     when(pendingCheckoutRepository.find("SUB-abc"))
-        .thenReturn(Optional.of(new PendingCheckout(1L, StoragePlan.STANDARD, 12900)));
+        .thenReturn(
+            Optional.of(new PendingCheckout(1L, SubscriptionType.STORAGE, "STANDARD", 12900)));
     ConfirmRequest request = new ConfirmRequest("paymentKey", "SUB-abc", 99999L);
 
     assertThatThrownBy(() -> subscriptionService.confirm(user, request))
@@ -198,7 +218,8 @@ class SubscriptionServiceTest {
             .status(SubscriptionStatus.ACTIVE)
             .build();
     when(pendingCheckoutRepository.find("SUB-abc"))
-        .thenReturn(Optional.of(new PendingCheckout(1L, StoragePlan.STANDARD, 12900)));
+        .thenReturn(
+            Optional.of(new PendingCheckout(1L, SubscriptionType.STORAGE, "STANDARD", 12900)));
     when(paymentGateway.confirm("paymentKey", "SUB-abc", 12900))
         .thenReturn(
             new PaymentConfirmation("paymentKey", 12900, LocalDateTime.now(), "receipt-url"));
@@ -217,7 +238,8 @@ class SubscriptionServiceTest {
     ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
     verify(paymentRepository).save(paymentCaptor.capture());
     assertThat(paymentCaptor.getValue().getProviderPaymentKey()).isEqualTo("paymentKey");
-    assertThat(paymentCaptor.getValue().getPlan()).isEqualTo(StoragePlan.STANDARD);
+    assertThat(paymentCaptor.getValue().getPlanCode()).isEqualTo("STANDARD");
+    assertThat(paymentCaptor.getValue().getSubscriptionType()).isEqualTo(SubscriptionType.STORAGE);
     verify(pendingCheckoutRepository).delete("SUB-abc");
   }
 
