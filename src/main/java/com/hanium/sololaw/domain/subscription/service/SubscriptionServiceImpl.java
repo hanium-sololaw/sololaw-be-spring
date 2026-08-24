@@ -10,23 +10,24 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hanium.sololaw.domain.payment.entity.Payment;
+import com.hanium.sololaw.domain.payment.entity.enums.SubscriptionType;
+import com.hanium.sololaw.domain.payment.gateway.PaymentCheckoutCommand;
+import com.hanium.sololaw.domain.payment.gateway.PaymentCheckoutInfo;
+import com.hanium.sololaw.domain.payment.gateway.PaymentConfirmation;
+import com.hanium.sololaw.domain.payment.gateway.PaymentGateway;
+import com.hanium.sololaw.domain.payment.repository.PaymentRepository;
+import com.hanium.sololaw.domain.payment.repository.PendingCheckout;
+import com.hanium.sololaw.domain.payment.repository.PendingCheckoutRepository;
 import com.hanium.sololaw.domain.subscription.dto.request.CheckoutRequest;
 import com.hanium.sololaw.domain.subscription.dto.request.ConfirmRequest;
 import com.hanium.sololaw.domain.subscription.dto.response.CheckoutResponse;
 import com.hanium.sololaw.domain.subscription.dto.response.SubscriptionResponse;
-import com.hanium.sololaw.domain.subscription.entity.Payment;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
 import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
 import com.hanium.sololaw.domain.subscription.entity.enums.SubscriptionStatus;
 import com.hanium.sololaw.domain.subscription.exception.SubscriptionErrorCode;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentCheckoutCommand;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentCheckoutInfo;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentConfirmation;
-import com.hanium.sololaw.domain.subscription.gateway.PaymentGateway;
 import com.hanium.sololaw.domain.subscription.mapper.SubscriptionMapper;
-import com.hanium.sololaw.domain.subscription.repository.PaymentRepository;
-import com.hanium.sololaw.domain.subscription.repository.PendingCheckout;
-import com.hanium.sololaw.domain.subscription.repository.PendingCheckoutRepository;
 import com.hanium.sololaw.domain.subscription.repository.SubscriptionRepository;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.exception.CustomException;
@@ -93,7 +94,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     */
     String orderId = "SUB-" + UUID.randomUUID();
     pendingCheckoutRepository.save(
-        orderId, new PendingCheckout(user.getId(), targetPlan, targetPlan.getPriceKrw()));
+        orderId,
+        new PendingCheckout(
+            user.getId(), SubscriptionType.STORAGE, targetPlan.name(), targetPlan.getPriceKrw()));
 
     /*
        (3) 결제 게이트웨이에 체크아웃 정보 요청
@@ -136,7 +139,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         pendingCheckoutRepository
             .find(request.orderId())
             .orElseThrow(() -> new CustomException(SubscriptionErrorCode.INVALID_CHECKOUT_SESSION));
-    if (!pending.userId().equals(user.getId())) {
+    if (!pending.userId().equals(user.getId())
+        || pending.subscriptionType() != SubscriptionType.STORAGE) {
       throw new CustomException(SubscriptionErrorCode.INVALID_CHECKOUT_SESSION);
     }
     if (pending.amount() != request.amount()) {
@@ -154,8 +158,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
        (3) 구독 활성화
     */
     Subscription subscription = findSubscription(user.getId());
+    StoragePlan targetPlan = StoragePlan.valueOf(pending.planCode());
     LocalDateTime nextBillingAt = LocalDateTime.now().plusMonths(1);
-    subscription.activatePaidPlan(pending.plan(), nextBillingAt);
+    subscription.activatePaidPlan(targetPlan, nextBillingAt);
     subscriptionRepository.save(subscription);
 
     /*
@@ -165,7 +170,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Payment.builder()
             .userId(user.getId())
             .subscriptionId(subscription.getId())
-            .plan(pending.plan())
+            .subscriptionType(SubscriptionType.STORAGE)
+            .planCode(pending.planCode())
             .amount(BigDecimal.valueOf(pending.amount()))
             .provider(paymentGateway.getProvider())
             .providerPaymentKey(confirmation.providerPaymentKey())
@@ -184,7 +190,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     log.info(
         "[SubscriptionService] confirm() - END | userId: {}, plan: {}",
         user.getId(),
-        pending.plan());
+        pending.planCode());
     return result;
   }
 

@@ -1,16 +1,16 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.entity;
+package com.hanium.sololaw.domain.payment.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
-import com.hanium.sololaw.domain.subscription.entity.enums.PaymentProvider;
-import com.hanium.sololaw.domain.subscription.entity.enums.PaymentStatus;
-import com.hanium.sololaw.domain.subscription.entity.enums.StoragePlan;
+import com.hanium.sololaw.domain.payment.entity.enums.PaymentProvider;
+import com.hanium.sololaw.domain.payment.entity.enums.PaymentStatus;
+import com.hanium.sololaw.domain.payment.entity.enums.SubscriptionType;
 import com.hanium.sololaw.global.common.BaseTimeEntity;
 
 import lombok.AccessLevel;
@@ -38,9 +38,16 @@ public class Payment extends BaseTimeEntity {
   @Column(name = "subscription_id")
   private Long subscriptionId;
 
+  /** 저장공간·판례검색 중 어느 구독의 결제인지 구분한다. subscriptionId만으로는 두 구독 테이블 중 어디를 가리키는지 알 수 없다. */
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private StoragePlan plan;
+  private SubscriptionType subscriptionType;
+
+  /**
+   * StoragePlan·PrecedentSearchPlan 등 구독 종류별 enum의 name()을 그대로 저장한다(Payment는 특정 플랜 enum에 묶이지 않는다).
+   */
+  @Column(nullable = false, length = 20)
+  private String planCode;
 
   @Column(nullable = false, precision = 15, scale = 0)
   private BigDecimal amount;

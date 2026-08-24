@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.entity.enums;
+package com.hanium.sololaw.domain.payment.entity.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

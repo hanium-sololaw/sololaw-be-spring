@@ -1,9 +1,9 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.gateway;
+package com.hanium.sololaw.domain.payment.gateway;
 
-import com.hanium.sololaw.domain.subscription.entity.enums.PaymentProvider;
+import com.hanium.sololaw.domain.payment.entity.enums.PaymentProvider;
 
 /**
  * 결제대행사(PG) 연동 포트. 구현체를 교체하는 것만으로 다른 PG(Stripe 등)로 바꿔 끼울 수 있도록, 구독 도메인은 이 인터페이스에만 의존한다. 현재는 {@link

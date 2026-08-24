@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.gateway;
+package com.hanium.sololaw.domain.payment.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,7 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-import com.hanium.sololaw.domain.subscription.exception.SubscriptionErrorCode;
+import com.hanium.sololaw.domain.payment.entity.enums.PaymentProvider;
+import com.hanium.sololaw.domain.payment.exception.PaymentErrorCode;
 import com.hanium.sololaw.global.config.property.TossPaymentProperties;
 import com.hanium.sololaw.global.exception.CustomException;
 
@@ -73,12 +74,11 @@ class TossPaymentGatewayTest {
     assertThatThrownBy(() -> gateway.confirm("paymentKey", "SUB-1", 12900))
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
-        .isEqualTo(SubscriptionErrorCode.PAYMENT_GATEWAY_ERROR);
+        .isEqualTo(PaymentErrorCode.PAYMENT_GATEWAY_ERROR);
   }
 
   @Test
   void getProvider_returnsToss() {
-    assertThat(gateway.getProvider())
-        .isEqualTo(com.hanium.sololaw.domain.subscription.entity.enums.PaymentProvider.TOSS);
+    assertThat(gateway.getProvider()).isEqualTo(PaymentProvider.TOSS);
   }
 }

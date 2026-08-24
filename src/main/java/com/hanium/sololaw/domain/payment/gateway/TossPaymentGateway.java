@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) HANIUM SOLOLAW 
  */
-package com.hanium.sololaw.domain.subscription.gateway;
+package com.hanium.sololaw.domain.payment.gateway;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import com.hanium.sololaw.domain.subscription.entity.enums.PaymentProvider;
-import com.hanium.sololaw.domain.subscription.exception.SubscriptionErrorCode;
+import com.hanium.sololaw.domain.payment.entity.enums.PaymentProvider;
+import com.hanium.sololaw.domain.payment.exception.PaymentErrorCode;
 import com.hanium.sololaw.global.config.property.TossPaymentProperties;
 import com.hanium.sololaw.global.exception.CustomException;
 
@@ -83,7 +83,7 @@ public class TossPaymentGateway implements PaymentGateway {
           "[TossPaymentGateway] confirm() - FAIL | orderId: {}, error: {}",
           orderId,
           e.getMessage());
-      throw new CustomException(SubscriptionErrorCode.PAYMENT_GATEWAY_ERROR);
+      throw new CustomException(PaymentErrorCode.PAYMENT_GATEWAY_ERROR);
     }
 
     String receiptUrl =
@@ -112,7 +112,7 @@ public class TossPaymentGateway implements PaymentGateway {
           "[TossPaymentGateway] cancel() - FAIL | paymentKey: {}, error: {}",
           paymentKey,
           e.getMessage());
-      throw new CustomException(SubscriptionErrorCode.PAYMENT_GATEWAY_ERROR);
+      throw new CustomException(PaymentErrorCode.PAYMENT_GATEWAY_ERROR);
     }
 
     log.debug("[TossPaymentGateway] cancel() - END | paymentKey: {}", paymentKey);
