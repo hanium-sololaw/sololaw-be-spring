@@ -3,6 +3,10 @@
  */
 package com.hanium.sololaw.domain.user.service;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,12 +15,16 @@ import com.hanium.sololaw.domain.user.dto.request.UpdatePasswordRequest;
 import com.hanium.sololaw.domain.user.dto.request.UpdateProfileRequest;
 import com.hanium.sololaw.domain.user.dto.request.WithdrawRequest;
 import com.hanium.sololaw.domain.user.dto.response.UserResponse;
+import com.hanium.sololaw.domain.user.dto.result.UpdateProfileResult;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.domain.user.exception.UserErrorCode;
 import com.hanium.sololaw.domain.user.mapper.UserMapper;
 import com.hanium.sololaw.domain.user.repository.UserRepository;
+import com.hanium.sololaw.global.config.property.JwtProperties;
 import com.hanium.sololaw.global.exception.CustomException;
 import com.hanium.sololaw.global.infra.redis.RefreshTokenRepository;
+import com.hanium.sololaw.global.security.jwt.JwtProvider;
+import com.hanium.sololaw.global.security.jwt.internal.GeneratedRefreshTokenPayload;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +38,9 @@ public class UserServiceImpl implements UserService {
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final RefreshTokenRepository refreshTokenRepository;
+  private final UserDetailsService userDetailsService;
+  private final JwtProvider jwtProvider;
+  private final JwtProperties jwtProperties;
 
   @Override
   public UserResponse getMe(User user) {
@@ -46,31 +57,74 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public UserResponse updateProfile(User user, UpdateProfileRequest request) {
+  public UpdateProfileResult updateProfile(User user, UpdateProfileRequest request) {
     log.info("[UserService] updateProfile() - START | userId: {}", user.getId());
 
     /*
-       (1) 이메일 변경 시 중복 확인
-       - 본인의 기존 이메일로 그대로 수정하는 경우는 중복 검사 대상에서 제외한다.
+       (1) 이메일/아이디 변경 시 중복 확인
+       - 본인의 기존 값으로 그대로 수정하는 경우는 중복 검사 대상에서 제외한다.
     */
     if (!user.getEmail().equals(request.email()) && userRepository.existsByEmail(request.email())) {
       throw new CustomException(UserErrorCode.ALREADY_EXIST_EMAIL);
     }
+    boolean loginIdChanged = !user.getLoginId().equals(request.loginId());
+    if (loginIdChanged && userRepository.existsByLoginId(request.loginId())) {
+      throw new CustomException(UserErrorCode.ALREADY_EXIST_LOGIN_ID);
+    }
 
     /*
-       (2) 이름/이메일 변경
+       (2) 이름/이메일/아이디 변경
        - user는 detached 상태이므로 변경 후 명시적으로 저장한다.
     */
     user.updateName(request.name());
     user.updateEmail(request.email());
+    user.updateLoginId(request.loginId());
     User savedUser = userRepository.save(user);
 
     /*
-       (3) ResponseDto Mapping
+       (3) 아이디가 바뀌면 새 토큰 발급
+       - JWT의 subject가 loginId라 기존 토큰의 subject가 더 이상 유효하지 않다. 기존 리프레시 토큰은 모두
+         무효화하고 새 액세스·리프레시 토큰을 발급한다(컨트롤러가 쿠키로 내려준다).
     */
-    UserResponse result = userMapper.toResponse(savedUser);
+    String newAccessToken = null;
+    String newRefreshToken = null;
+    Long newRefreshTokenTtlSeconds = null;
+    if (loginIdChanged) {
+      refreshTokenRepository.deleteAllRefreshTokensByUser(savedUser.getId());
 
-    log.info("[UserService] updateProfile() - END | userId: {}", user.getId());
+      UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getLoginId());
+      Authentication authentication =
+          new UsernamePasswordAuthenticationToken(
+              savedUser.getLoginId(), null, userDetails.getAuthorities());
+
+      newAccessToken = jwtProvider.generateAccessToken(authentication);
+      GeneratedRefreshTokenPayload generatedRefreshTokenPayload =
+          jwtProvider.generateRefreshToken(authentication, false);
+      newRefreshToken = generatedRefreshTokenPayload.token();
+      newRefreshTokenTtlSeconds = jwtProperties.getRefreshTokenShortValidityInSeconds();
+
+      refreshTokenRepository.saveRefreshToken(
+          newRefreshToken,
+          generatedRefreshTokenPayload.jti(),
+          newRefreshTokenTtlSeconds,
+          savedUser.getId());
+    }
+
+    /*
+       (4) ResponseDto Mapping
+    */
+    UpdateProfileResult result =
+        UpdateProfileResult.builder()
+            .profile(userMapper.toResponse(savedUser))
+            .newAccessToken(newAccessToken)
+            .newRefreshToken(newRefreshToken)
+            .newRefreshTokenTtlSeconds(newRefreshTokenTtlSeconds)
+            .build();
+
+    log.info(
+        "[UserService] updateProfile() - END | userId: {}, loginIdChanged: {}",
+        user.getId(),
+        loginIdChanged);
     return result;
   }
 

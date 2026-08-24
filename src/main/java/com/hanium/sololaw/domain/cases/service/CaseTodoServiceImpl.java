@@ -33,19 +33,27 @@ public class CaseTodoServiceImpl implements CaseTodoService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<CaseTodoResponse> getTodos(User user, Long caseId) {
-    log.info("[CaseTodoService] getTodos() - START | userId: {}, caseId: {}", user.getId(), caseId);
+  public List<CaseTodoResponse> getTodos(User user, Long caseId, Boolean isDone) {
+    log.info(
+        "[CaseTodoService] getTodos() - START | userId: {}, caseId: {}, isDone: {}",
+        user.getId(),
+        caseId,
+        isDone);
 
     /*
        1. 사건 소유자 검증
+       - caseId가 없으면(전체 사건 조회) 건너뛴다.
     */
-    verifyCaseOwnership(caseId, user.getId());
+    if (caseId != null) {
+      verifyCaseOwnership(caseId, user.getId());
+    }
 
     /*
        2. 할 일 목록 조회 및 ResponseDto Mapping
     */
     List<CaseTodoResponse> result =
-        caseTodoMapper.toResponseList(caseTodoRepository.findAllByCaseId(caseId));
+        caseTodoMapper.toResponseList(
+            caseTodoRepository.findAllByUserIdAndFilters(user.getId(), caseId, isDone));
 
     log.info("[CaseTodoService] getTodos() - END | caseId: {}, count: {}", caseId, result.size());
     return result;

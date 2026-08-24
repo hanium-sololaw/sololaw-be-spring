@@ -63,7 +63,7 @@ class NotificationSettingServiceTest {
     User user = User.builder().id(1L).build();
     NotificationSetting setting = NotificationSetting.builder().id(10L).userId(1L).build();
     UpdateNotificationSettingRequest request =
-        new UpdateNotificationSettingRequest(null, null, true);
+        new UpdateNotificationSettingRequest(null, null, true, null, false);
     when(notificationSettingRepository.findByUserId(1L)).thenReturn(Optional.of(setting));
     when(notificationSettingMapper.toResponse(any(NotificationSetting.class)))
         .thenReturn(NotificationSettingResponse.builder().build());
@@ -73,13 +73,15 @@ class NotificationSettingServiceTest {
     assertThat(setting.getAiPrecedentAlert()).isTrue();
     assertThat(setting.getHearingReminderAlert()).isTrue();
     assertThat(setting.getSubmissionDeadlineAlert()).isTrue();
+    assertThat(setting.getEvidenceSupplementAlert()).isFalse();
+    assertThat(setting.getOverdueDeadlineAlert()).isTrue();
   }
 
   @Test
   void updateMySettings_throwsNotFound_whenMissing() {
     User user = User.builder().id(1L).build();
     UpdateNotificationSettingRequest request =
-        new UpdateNotificationSettingRequest(false, null, null);
+        new UpdateNotificationSettingRequest(false, null, null, null, null);
     when(notificationSettingRepository.findByUserId(1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> notificationSettingService.updateMySettings(user, request))

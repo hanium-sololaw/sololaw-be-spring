@@ -56,7 +56,9 @@ public class NotificationSettingServiceImpl implements NotificationSettingServic
     setting.updateSettings(
         request.hearingReminderAlert(),
         request.submissionDeadlineAlert(),
-        request.aiPrecedentAlert());
+        request.aiPrecedentAlert(),
+        request.overdueDeadlineAlert(),
+        request.evidenceSupplementAlert());
 
     /*
        (2) ResponseDto Mapping

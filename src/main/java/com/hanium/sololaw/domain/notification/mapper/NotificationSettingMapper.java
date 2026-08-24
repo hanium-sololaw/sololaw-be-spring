@@ -19,6 +19,8 @@ public class NotificationSettingMapper {
         .hearingReminderAlert(setting.getHearingReminderAlert())
         .submissionDeadlineAlert(setting.getSubmissionDeadlineAlert())
         .aiPrecedentAlert(setting.getAiPrecedentAlert())
+        .overdueDeadlineAlert(setting.getOverdueDeadlineAlert())
+        .evidenceSupplementAlert(setting.getEvidenceSupplementAlert())
         .build();
   }
 }

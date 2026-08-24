@@ -18,6 +18,7 @@ import com.hanium.sololaw.domain.user.dto.request.UpdatePasswordRequest;
 import com.hanium.sololaw.domain.user.dto.request.UpdateProfileRequest;
 import com.hanium.sololaw.domain.user.dto.request.WithdrawRequest;
 import com.hanium.sololaw.domain.user.dto.response.UserResponse;
+import com.hanium.sololaw.domain.user.dto.result.UpdateProfileResult;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.domain.user.service.UserService;
 import com.hanium.sololaw.global.common.BaseResponse;
@@ -60,15 +61,31 @@ public class UserController {
             **Parameters**  \n
             name: 사용자 이름 \n
             email: 사용자 이메일 \n
+            loginId: 사용자 로그인 아이디 \n
             \n
             **Returns**  \n
-            수정된 프로필
+            수정된 프로필. 로그인 아이디가 바뀌면 기존 토큰의 subject가 무효해지므로 새 ACCESS_TOKEN·REFRESH_TOKEN을 \
+            쿠키로 함께 내려줍니다(바뀌지 않았으면 쿠키를 갱신하지 않습니다).
             """)
   @PatchMapping("/me")
   public ResponseEntity<BaseResponse<UserResponse>> updateProfile(
       @CurrentUser User user, @Valid @RequestBody UpdateProfileRequest request) {
-    UserResponse result = userService.updateProfile(user, request);
-    return ResponseEntity.ok(BaseResponse.success(result));
+    UpdateProfileResult result = userService.updateProfile(user, request);
+
+    if (result.newAccessToken() == null) {
+      return ResponseEntity.ok(BaseResponse.success(result.profile()));
+    }
+
+    HttpHeaders tokenHeaders = new HttpHeaders();
+    tokenHeaders.add(
+        HttpHeaders.SET_COOKIE,
+        jwtCookieWriter.addAccessTokenToCookie(result.newAccessToken()).toString());
+    tokenHeaders.add(
+        HttpHeaders.SET_COOKIE,
+        jwtCookieWriter
+            .addRefreshTokenToCookie(result.newRefreshToken(), result.newRefreshTokenTtlSeconds())
+            .toString());
+    return ResponseEntity.ok().headers(tokenHeaders).body(BaseResponse.success(result.profile()));
   }
 
   @Operation(
