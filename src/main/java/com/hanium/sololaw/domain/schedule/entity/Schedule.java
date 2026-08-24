@@ -67,6 +67,8 @@ public class Schedule extends BaseTimeEntity {
 
   private LocalDateTime reminderSentAt;
 
+  private LocalDate globalReminderSentDate;
+
   public void update(
       String title,
       ScheduleType scheduleType,
@@ -88,9 +90,14 @@ public class Schedule extends BaseTimeEntity {
     this.reminderUnit = reminderUnit;
     // 수정 시 리마인더를 재무장한다 — 그대로 두면 날짜 변경 후에도 과거 발송 기록 때문에 새 알림이 스킵된다.
     this.reminderSentAt = null;
+    this.globalReminderSentDate = null;
   }
 
   public void markReminderSent() {
     this.reminderSentAt = LocalDateTime.now();
+  }
+
+  public void markGlobalReminderSent(LocalDate date) {
+    this.globalReminderSentDate = date;
   }
 }

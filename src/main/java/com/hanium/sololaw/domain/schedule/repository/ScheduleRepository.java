@@ -38,5 +38,15 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
   List<Schedule> findAllByReminderEnabledTrueAndReminderSentAtIsNull();
 
+  /** 오늘 기준 targetDates(예: 7·3·1일 후) 중 하나와 일치하고 오늘자로 아직 발송되지 않은 일정을 찾는다. */
+  @Query(
+      "SELECT s FROM Schedule s WHERE s.scheduleType IN (:scheduleTypes) "
+          + "AND s.eventDate IN (:targetDates) "
+          + "AND (s.globalReminderSentDate IS NULL OR s.globalReminderSentDate <> :today)")
+  List<Schedule> findAllDueForGlobalReminder(
+      @Param("scheduleTypes") List<ScheduleType> scheduleTypes,
+      @Param("targetDates") List<LocalDate> targetDates,
+      @Param("today") LocalDate today);
+
   long countByCaseId(Long caseId);
 }

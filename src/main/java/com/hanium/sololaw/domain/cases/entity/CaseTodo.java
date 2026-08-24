@@ -4,6 +4,7 @@
 package com.hanium.sololaw.domain.cases.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
@@ -39,12 +40,20 @@ public class CaseTodo extends BaseTimeEntity {
   @Column(nullable = false)
   private Boolean isDone = false;
 
+  private LocalDateTime overdueAlertSentAt;
+
   public void update(String title, LocalDate dueDate) {
     this.title = title;
     this.dueDate = dueDate;
+    // 기한이 바뀌면 기한 지남 알림을 재무장한다 — 그대로 두면 새 기한이 다시 지나도 알림이 스킵된다.
+    this.overdueAlertSentAt = null;
   }
 
   public void updateIsDone(boolean isDone) {
     this.isDone = isDone;
+  }
+
+  public void markOverdueAlertSent() {
+    this.overdueAlertSentAt = LocalDateTime.now();
   }
 }
