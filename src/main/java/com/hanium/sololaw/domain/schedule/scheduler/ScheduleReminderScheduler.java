@@ -22,8 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 일정별 개별 리마인더(reminder_enabled=true)를 검사해 알림을 생성하는 배치. 전역 notification_settings 기반(기일 3일 전·1일 전 고정)
- * 알림은 이 스케줄러의 범위가 아니다.
+ * 일정별 개별 리마인더(reminder_enabled=true)를 검사해 알림을 생성하는 배치. 전역 notification_settings 기반(기일 7일 전·3일 전·1일
+ * 전 고정) 알림은 이 스케줄러의 범위가 아니다, 별도 배치로 구현 예정.
  */
 @Slf4j
 @Component
