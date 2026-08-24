@@ -11,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Schema(description = "결제대행사")
 public enum PaymentProvider {
-  TOSS("토스페이먼츠");
+  TOSS("토스페이먼츠"),
+  STRIPE("스트라이프");
 
   private final String description;
 }
