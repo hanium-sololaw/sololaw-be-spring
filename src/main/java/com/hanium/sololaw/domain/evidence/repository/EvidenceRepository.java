@@ -3,6 +3,7 @@
  */
 package com.hanium.sololaw.domain.evidence.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -46,4 +47,6 @@ public interface EvidenceRepository extends JpaRepository<Evidence, Long> {
   long countByCaseIdAndPartyType(Long caseId, ExhibitParty partyType);
 
   long countByCaseId(Long caseId);
+
+  List<Evidence> findAllByStatusAndSupplementAlertSentAtIsNull(EvidenceStatus status);
 }

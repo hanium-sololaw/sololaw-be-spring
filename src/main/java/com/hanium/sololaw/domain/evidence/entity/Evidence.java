@@ -82,6 +82,8 @@ public class Evidence extends BaseTimeEntity {
 
   private LocalDateTime uploadedAt;
 
+  private LocalDateTime supplementAlertSentAt;
+
   public void update(
       String exhibitNo,
       String proofPurpose,
@@ -100,9 +102,15 @@ public class Evidence extends BaseTimeEntity {
     if (status == EvidenceStatus.SUBMITTED) {
       this.submittedAt = LocalDateTime.now();
     }
+    // 상태가 바뀌면 보완 알림을 재무장한다 — 그대로 두면 다시 보완필요로 돌아와도 알림이 스킵된다.
+    this.supplementAlertSentAt = null;
   }
 
   public void updateIsLatest(boolean isLatest) {
     this.isLatest = isLatest;
+  }
+
+  public void markSupplementAlertSent() {
+    this.supplementAlertSentAt = LocalDateTime.now();
   }
 }

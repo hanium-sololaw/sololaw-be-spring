@@ -3,6 +3,7 @@
  */
 package com.hanium.sololaw.domain.cases.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,6 @@ public interface CaseTodoRepository extends JpaRepository<CaseTodo, Long> {
           + "ORDER BY t.dueDate ASC NULLS LAST")
   List<CaseTodo> findAllByUserIdAndFilters(
       @Param("userId") Long userId, @Param("caseId") Long caseId, @Param("isDone") Boolean isDone);
+
+  List<CaseTodo> findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(LocalDate date);
 }
