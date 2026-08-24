@@ -39,7 +39,8 @@ public class NotificationSettingController {
           """
             **Returns**  \n
             hearingReminderAlert(변론기일 리마인더), submissionDeadlineAlert(제출 기한 알림), \
-            aiPrecedentAlert(유사 판례 업데이트) \n
+            aiPrecedentAlert(유사 판례 업데이트), overdueDeadlineAlert(기한 지남 알림), \
+            evidenceSupplementAlert(증거 보완 알림) \n
             \n
             알림 설정은 회원가입 시 기본값으로 생성되어 항상 존재합니다.
             """)
@@ -55,7 +56,8 @@ public class NotificationSettingController {
       description =
           """
             **Parameters**  \n
-            hearingReminderAlert, submissionDeadlineAlert, aiPrecedentAlert \n
+            hearingReminderAlert, submissionDeadlineAlert, aiPrecedentAlert, overdueDeadlineAlert, \
+            evidenceSupplementAlert \n
             (null인 필드는 변경하지 않음) \n
             \n
             **Returns**  \n
