@@ -26,6 +26,7 @@ import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
 import com.hanium.sololaw.domain.cases.dto.response.LitigationCostResponse;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
+import com.hanium.sololaw.domain.cases.entity.enums.LitigationInstance;
 import com.hanium.sololaw.domain.cases.service.CaseService;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.common.BaseResponse;
@@ -146,8 +147,12 @@ public class CaseController {
       summary = "[ 사용자 | 토큰 O | 인지대·송달료 산출 ]",
       description =
           """
+            **Parameters**  \n
+            instance(선택, 기본값 FIRST) — FIRST(1심/소장), APPEAL(항소), SUPREME(상고). \
+            인지액 배율(항소 1.5배·상고 2배, 인지법 제3조)과 송달 회차(항소 12회·상고 8회)에 반영됩니다 \n
+            \n
             **Returns**  \n
-            claimAmount(소가), isSmallClaim(소액사건 여부), isElectronicFiling(전자소송 여부), \
+            claimAmount(소가), isSmallClaim(소액사건 여부), isElectronicFiling(전자소송 여부), instance, \
             stampFee(인지액), deliveryFee(송달료), totalCost, partyCount, deliveryCount, disclaimer \n
             \n
             사건의 claimAmount(소가)와 등록된 당사자 수, filingMethod(전자소송 여부)를 기준으로 \
@@ -156,8 +161,10 @@ public class CaseController {
             """)
   @GetMapping("/{caseId}/litigation-cost")
   public ResponseEntity<BaseResponse<LitigationCostResponse>> getLitigationCost(
-      @CurrentUser User user, @PathVariable Long caseId) {
-    LitigationCostResponse result = caseService.getLitigationCost(user, caseId);
+      @CurrentUser User user,
+      @PathVariable Long caseId,
+      @RequestParam(defaultValue = "FIRST") LitigationInstance instance) {
+    LitigationCostResponse result = caseService.getLitigationCost(user, caseId, instance);
     return ResponseEntity.ok(BaseResponse.success(result));
   }
 }

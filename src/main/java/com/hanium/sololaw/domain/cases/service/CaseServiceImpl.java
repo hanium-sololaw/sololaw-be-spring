@@ -21,6 +21,7 @@ import com.hanium.sololaw.domain.cases.entity.Case;
 import com.hanium.sololaw.domain.cases.entity.LitigationStage;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
+import com.hanium.sololaw.domain.cases.entity.enums.LitigationInstance;
 import com.hanium.sololaw.domain.cases.entity.enums.StageStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.StartingStage;
 import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
@@ -279,9 +280,13 @@ public class CaseServiceImpl implements CaseService {
 
   @Override
   @Transactional(readOnly = true)
-  public LitigationCostResponse getLitigationCost(User user, Long caseId) {
+  public LitigationCostResponse getLitigationCost(
+      User user, Long caseId, LitigationInstance instance) {
     log.info(
-        "[CaseService] getLitigationCost() - START | userId: {}, caseId: {}", user.getId(), caseId);
+        "[CaseService] getLitigationCost() - START | userId: {}, caseId: {}, instance: {}",
+        user.getId(),
+        caseId,
+        instance);
 
     /*
        1. 사건 조회 및 소유자 검증
@@ -307,10 +312,12 @@ public class CaseServiceImpl implements CaseService {
 
     /*
        4. 산출
+       - instance(심급)는 사건에 저장된 값이 아니라 호출 시점에 지정한다. 같은 사건도 소장 단계와
+         항소장 단계를 각각 계산해볼 수 있어야 하기 때문이다.
     */
     LitigationCostResponse result =
         litigationCostCalculator.calculate(
-            caseEntity.getClaimAmount(), partyCount, caseEntity.getFilingMethod());
+            caseEntity.getClaimAmount(), partyCount, caseEntity.getFilingMethod(), instance);
 
     log.info(
         "[CaseService] getLitigationCost() - END | caseId: {}, totalCost: {}",

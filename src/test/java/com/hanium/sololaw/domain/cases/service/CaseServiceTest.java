@@ -30,6 +30,7 @@ import com.hanium.sololaw.domain.cases.entity.CaseParty;
 import com.hanium.sololaw.domain.cases.entity.LitigationStage;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
 import com.hanium.sololaw.domain.cases.entity.enums.FilingMethod;
+import com.hanium.sololaw.domain.cases.entity.enums.LitigationInstance;
 import com.hanium.sololaw.domain.cases.entity.enums.StageStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.StartingStage;
 import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
@@ -159,7 +160,7 @@ class CaseServiceTest {
     User user = User.builder().id(1L).build();
     when(caseRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> caseService.getLitigationCost(user, 999L))
+    assertThatThrownBy(() -> caseService.getLitigationCost(user, 999L, LitigationInstance.FIRST))
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(CaseErrorCode.CASE_NOT_FOUND);
@@ -171,7 +172,7 @@ class CaseServiceTest {
     Case existingCase = Case.builder().id(5L).userId(1L).claimAmount(null).build();
     when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existingCase));
 
-    assertThatThrownBy(() -> caseService.getLitigationCost(user, 5L))
+    assertThatThrownBy(() -> caseService.getLitigationCost(user, 5L, LitigationInstance.FIRST))
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(CaseErrorCode.CLAIM_AMOUNT_REQUIRED);
@@ -189,15 +190,17 @@ class CaseServiceTest {
             .build();
     List<CaseParty> parties = List.of(CaseParty.builder().build(), CaseParty.builder().build());
     LitigationCostResponse expected =
-        new LitigationCostResponse(5_000_000, true, true, 22_500, 56_400, 78_900, 2, 10, "안내");
+        new LitigationCostResponse(
+            5_000_000, true, true, LitigationInstance.FIRST, 22_500, 56_400, 78_900, 2, 10, "안내");
 
     when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existingCase));
     when(casePartyRepository.findAllByCaseId(5L)).thenReturn(parties);
     when(litigationCostCalculator.calculate(
-            BigDecimal.valueOf(5_000_000), 2, FilingMethod.ELECTRONIC))
+            BigDecimal.valueOf(5_000_000), 2, FilingMethod.ELECTRONIC, LitigationInstance.FIRST))
         .thenReturn(expected);
 
-    LitigationCostResponse result = caseService.getLitigationCost(user, 5L);
+    LitigationCostResponse result =
+        caseService.getLitigationCost(user, 5L, LitigationInstance.FIRST);
 
     assertThat(result).isEqualTo(expected);
   }
