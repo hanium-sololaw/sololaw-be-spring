@@ -31,7 +31,9 @@ public class GlobalExceptionHandler {
     BaseErrorCode errorCode = ex.getErrorCode();
     log.warn("CustomException 발생: {} - {}", errorCode.getCode(), errorCode.getMessage());
     return ResponseEntity.status(errorCode.getStatus())
-        .body(BaseResponse.error(errorCode.getStatus().value(), errorCode.getMessage()));
+        .body(
+            BaseResponse.error(
+                errorCode.getStatus().value(), errorCode.getCode(), errorCode.getMessage()));
   }
 
   // Validation 실패
