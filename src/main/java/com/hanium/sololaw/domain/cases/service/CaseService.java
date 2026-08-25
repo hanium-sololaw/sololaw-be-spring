@@ -10,10 +10,8 @@ import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseRequest;
 import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseStatusRequest;
 import com.hanium.sololaw.domain.cases.dto.response.CaseDetailResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
-import com.hanium.sololaw.domain.cases.dto.response.LitigationCostResponse;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
-import com.hanium.sololaw.domain.cases.entity.enums.LitigationInstance;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.common.OffsetPageResponse;
 
@@ -77,15 +75,4 @@ public interface CaseService {
    * @param caseId : 삭제할 사건 ID
    */
   void deleteCase(User user, Long caseId);
-
-  /**
-   * 사건의 인지대·송달료를 산출합니다. 소가는 사건의 claimAmount, 당사자 수는 등록된 CaseParty 건수를 그대로 씁니다. instance(심급)는 사건에
-   * 저장된 값이 아니라 호출 시점에 지정합니다. claimAmount가 없으면 계산할 수 없습니다.
-   *
-   * @param user : 로그인 사용자
-   * @param caseId : 계산할 사건 ID
-   * @param instance : 심급(1심/항소/상고) — 인지액 배율과 송달 회차에 반영
-   * @return : 산출된 LitigationCostResponse
-   */
-  LitigationCostResponse getLitigationCost(User user, Long caseId, LitigationInstance instance);
 }
