@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,10 +24,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.hanium.sololaw.domain.cases.dto.request.CreateCaseRequest;
 import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseRequest;
 import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
+import com.hanium.sololaw.domain.cases.dto.response.LitigationCostResponse;
 import com.hanium.sololaw.domain.cases.entity.Case;
 import com.hanium.sololaw.domain.cases.entity.CaseParty;
 import com.hanium.sololaw.domain.cases.entity.LitigationStage;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
+import com.hanium.sololaw.domain.cases.entity.enums.FilingMethod;
 import com.hanium.sololaw.domain.cases.entity.enums.StageStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.StartingStage;
 import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
@@ -46,6 +49,7 @@ class CaseServiceTest {
   @Mock private LitigationStageRepository litigationStageRepository;
   @Mock private CaseMapper caseMapper;
   @Mock private CasePartyMapper casePartyMapper;
+  @Mock private LitigationCostCalculator litigationCostCalculator;
 
   @InjectMocks private CaseServiceImpl caseService;
 
@@ -148,5 +152,53 @@ class CaseServiceTest {
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(CaseErrorCode.CASE_NOT_FOUND);
+  }
+
+  @Test
+  void getLitigationCost_throwsNotFound_whenNotOwned() {
+    User user = User.builder().id(1L).build();
+    when(caseRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> caseService.getLitigationCost(user, 999L))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(CaseErrorCode.CASE_NOT_FOUND);
+  }
+
+  @Test
+  void getLitigationCost_throwsClaimAmountRequired_whenClaimAmountIsNull() {
+    User user = User.builder().id(1L).build();
+    Case existingCase = Case.builder().id(5L).userId(1L).claimAmount(null).build();
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existingCase));
+
+    assertThatThrownBy(() -> caseService.getLitigationCost(user, 5L))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(CaseErrorCode.CLAIM_AMOUNT_REQUIRED);
+  }
+
+  @Test
+  void getLitigationCost_delegatesToCalculator_withRegisteredPartyCount() {
+    User user = User.builder().id(1L).build();
+    Case existingCase =
+        Case.builder()
+            .id(5L)
+            .userId(1L)
+            .claimAmount(BigDecimal.valueOf(5_000_000))
+            .filingMethod(FilingMethod.ELECTRONIC)
+            .build();
+    List<CaseParty> parties = List.of(CaseParty.builder().build(), CaseParty.builder().build());
+    LitigationCostResponse expected =
+        new LitigationCostResponse(5_000_000, true, true, 22_500, 56_400, 78_900, 2, 10, "안내");
+
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existingCase));
+    when(casePartyRepository.findAllByCaseId(5L)).thenReturn(parties);
+    when(litigationCostCalculator.calculate(
+            BigDecimal.valueOf(5_000_000), 2, FilingMethod.ELECTRONIC))
+        .thenReturn(expected);
+
+    LitigationCostResponse result = caseService.getLitigationCost(user, 5L);
+
+    assertThat(result).isEqualTo(expected);
   }
 }

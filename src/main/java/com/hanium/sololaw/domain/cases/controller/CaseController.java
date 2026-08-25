@@ -23,6 +23,7 @@ import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseRequest;
 import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseStatusRequest;
 import com.hanium.sololaw.domain.cases.dto.response.CaseDetailResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
+import com.hanium.sololaw.domain.cases.dto.response.LitigationCostResponse;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseType;
 import com.hanium.sololaw.domain.cases.service.CaseService;
@@ -139,5 +140,24 @@ public class CaseController {
       @CurrentUser User user, @PathVariable Long caseId) {
     caseService.deleteCase(user, caseId);
     return ResponseEntity.ok(BaseResponse.success(200, "사건이 삭제되었습니다.", null));
+  }
+
+  @Operation(
+      summary = "[ 사용자 | 토큰 O | 인지대·송달료 산출 ]",
+      description =
+          """
+            **Returns**  \n
+            claimAmount(소가), isSmallClaim(소액사건 여부), isElectronicFiling(전자소송 여부), \
+            stampFee(인지액), deliveryFee(송달료), totalCost, partyCount, deliveryCount, disclaimer \n
+            \n
+            사건의 claimAmount(소가)와 등록된 당사자 수, filingMethod(전자소송 여부)를 기준으로 \
+            민사소송 등 인지법 공식에 따라 산출합니다. claimAmount가 등록돼 있지 않으면 400으로 거부됩니다. \
+            법원이 실제 접수 시 다시 계산하는 참고용 수치입니다.
+            """)
+  @GetMapping("/{caseId}/litigation-cost")
+  public ResponseEntity<BaseResponse<LitigationCostResponse>> getLitigationCost(
+      @CurrentUser User user, @PathVariable Long caseId) {
+    LitigationCostResponse result = caseService.getLitigationCost(user, caseId);
+    return ResponseEntity.ok(BaseResponse.success(result));
   }
 }

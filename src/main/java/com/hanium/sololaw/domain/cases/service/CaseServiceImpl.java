@@ -16,6 +16,7 @@ import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseStatusRequest;
 import com.hanium.sololaw.domain.cases.dto.response.CaseDetailResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CasePartySummaryResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
+import com.hanium.sololaw.domain.cases.dto.response.LitigationCostResponse;
 import com.hanium.sololaw.domain.cases.entity.Case;
 import com.hanium.sololaw.domain.cases.entity.LitigationStage;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
@@ -60,6 +61,7 @@ public class CaseServiceImpl implements CaseService {
   private final ScheduleRepository scheduleRepository;
   private final CaseMapper caseMapper;
   private final CasePartyMapper casePartyMapper;
+  private final LitigationCostCalculator litigationCostCalculator;
 
   @Override
   @Transactional
@@ -273,6 +275,48 @@ public class CaseServiceImpl implements CaseService {
     caseRepository.delete(caseEntity);
 
     log.info("[CaseService] deleteCase() - END | caseId: {}", caseId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public LitigationCostResponse getLitigationCost(User user, Long caseId) {
+    log.info(
+        "[CaseService] getLitigationCost() - START | userId: {}, caseId: {}", user.getId(), caseId);
+
+    /*
+       1. 사건 조회 및 소유자 검증
+    */
+    Case caseEntity =
+        caseRepository
+            .findByIdAndUserId(caseId, user.getId())
+            .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
+
+    /*
+       2. 소가(claimAmount) 필수 검증
+       - 미입력 상태(사건 생성 시 선택 항목)면 계산할 수 없다.
+    */
+    if (caseEntity.getClaimAmount() == null) {
+      throw new CustomException(CaseErrorCode.CLAIM_AMOUNT_REQUIRED);
+    }
+
+    /*
+       3. 당사자 수 조회
+       - 사건 생성 시 원고(나)·피고가 자동 생성되므로 항상 2명 이상이다.
+    */
+    int partyCount = casePartyRepository.findAllByCaseId(caseId).size();
+
+    /*
+       4. 산출
+    */
+    LitigationCostResponse result =
+        litigationCostCalculator.calculate(
+            caseEntity.getClaimAmount(), partyCount, caseEntity.getFilingMethod());
+
+    log.info(
+        "[CaseService] getLitigationCost() - END | caseId: {}, totalCost: {}",
+        caseId,
+        result.totalCost());
+    return result;
   }
 
   private void seedLitigationStages(Long caseId, StartingStage startingStage) {
