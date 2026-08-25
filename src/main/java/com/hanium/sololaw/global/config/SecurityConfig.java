@@ -123,6 +123,8 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers("/internal/**")
                 .permitAll()
+                .requestMatchers("/webhooks/**")
+                .permitAll()
                 .anyRequest()
                 .authenticated());
   }

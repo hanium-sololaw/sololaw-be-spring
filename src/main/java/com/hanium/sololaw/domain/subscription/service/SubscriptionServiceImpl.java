@@ -19,6 +19,7 @@ import com.hanium.sololaw.domain.payment.gateway.PaymentGateway;
 import com.hanium.sololaw.domain.payment.repository.PaymentRepository;
 import com.hanium.sololaw.domain.payment.repository.PendingCheckout;
 import com.hanium.sololaw.domain.payment.repository.PendingCheckoutRepository;
+import com.hanium.sololaw.domain.payment.service.PendingPaymentConfirmer;
 import com.hanium.sololaw.domain.subscription.dto.request.CheckoutRequest;
 import com.hanium.sololaw.domain.subscription.dto.request.ConfirmRequest;
 import com.hanium.sololaw.domain.subscription.dto.response.CheckoutResponse;
@@ -38,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubscriptionServiceImpl implements SubscriptionService {
+public class SubscriptionServiceImpl implements SubscriptionService, PendingPaymentConfirmer {
 
   private final SubscriptionRepository subscriptionRepository;
   private final SubscriptionMapper subscriptionMapper;
@@ -155,43 +156,58 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         paymentGateway.confirm(request.paymentKey(), request.orderId(), request.amount());
 
     /*
-       (3) 구독 활성화
+       (3) 구독 활성화 — Stripe 웹훅과 공유하는 로직(confirmPending)에 위임한다.
     */
-    Subscription subscription = findSubscription(user.getId());
-    StoragePlan targetPlan = StoragePlan.valueOf(pending.planCode());
-    LocalDateTime nextBillingAt = LocalDateTime.now().plusMonths(1);
-    subscription.activatePaidPlan(targetPlan, nextBillingAt);
-    subscriptionRepository.save(subscription);
+    confirmPending(pending, request.orderId(), confirmation);
 
-    /*
-       (4) 결제 이력 저장
-    */
-    paymentRepository.save(
-        Payment.builder()
-            .userId(user.getId())
-            .subscriptionId(subscription.getId())
-            .subscriptionType(SubscriptionType.STORAGE)
-            .planCode(pending.planCode())
-            .amount(BigDecimal.valueOf(pending.amount()))
-            .provider(paymentGateway.getProvider())
-            .providerPaymentKey(confirmation.providerPaymentKey())
-            .providerOrderId(request.orderId())
-            .paidAt(confirmation.paidAt())
-            .receiptUrl(confirmation.receiptUrl())
-            .build());
-
-    /*
-       (5) 결제 대기 세션 제거
-    */
-    pendingCheckoutRepository.delete(request.orderId());
-
-    SubscriptionResponse result = subscriptionMapper.toResponse(subscription);
+    SubscriptionResponse result = subscriptionMapper.toResponse(findSubscription(user.getId()));
 
     log.info(
         "[SubscriptionService] confirm() - END | userId: {}, plan: {}",
         user.getId(),
         pending.planCode());
     return result;
+  }
+
+  @Override
+  public SubscriptionType getSubscriptionType() {
+    return SubscriptionType.STORAGE;
+  }
+
+  @Override
+  @Transactional
+  public void confirmPending(
+      PendingCheckout pending, String orderId, PaymentConfirmation confirmation) {
+    /*
+       (1) 구독 활성화
+    */
+    Subscription subscription = findSubscription(pending.userId());
+    StoragePlan targetPlan = StoragePlan.valueOf(pending.planCode());
+    LocalDateTime nextBillingAt = LocalDateTime.now().plusMonths(1);
+    subscription.activatePaidPlan(targetPlan, nextBillingAt);
+    subscriptionRepository.save(subscription);
+
+    /*
+       (2) 결제 이력 저장
+    */
+    paymentRepository.save(
+        Payment.builder()
+            .userId(pending.userId())
+            .subscriptionId(subscription.getId())
+            .subscriptionType(SubscriptionType.STORAGE)
+            .planCode(pending.planCode())
+            .amount(BigDecimal.valueOf(pending.amount()))
+            .provider(paymentGateway.getProvider())
+            .providerPaymentKey(confirmation.providerPaymentKey())
+            .providerOrderId(orderId)
+            .paidAt(confirmation.paidAt())
+            .receiptUrl(confirmation.receiptUrl())
+            .build());
+
+    /*
+       (3) 결제 대기 세션 제거
+    */
+    pendingCheckoutRepository.delete(orderId);
   }
 
   @Override

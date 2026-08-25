@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum PaymentErrorCode implements BaseErrorCode {
-  PAYMENT_GATEWAY_ERROR("PAY5001", "결제 처리 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY);
+  PAYMENT_GATEWAY_ERROR("PAY5001", "결제 처리 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+  INVALID_WEBHOOK_SIGNATURE("PAY4001", "웹훅 서명 검증에 실패했습니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

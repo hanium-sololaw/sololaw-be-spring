@@ -20,4 +20,7 @@ public class StripeProperties {
   private String successUrl;
 
   private String cancelUrl;
+
+  /** Stripe 대시보드(또는 CLI)에서 발급받은 웹훅 서명 시크릿. 서명 검증에만 쓰이고 API 호출에는 쓰이지 않는다. */
+  private String webhookSecret;
 }
