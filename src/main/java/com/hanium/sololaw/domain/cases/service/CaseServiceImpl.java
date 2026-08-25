@@ -13,9 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hanium.sololaw.domain.cases.dto.request.CreateCaseRequest;
 import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseRequest;
 import com.hanium.sololaw.domain.cases.dto.request.UpdateCaseStatusRequest;
+import com.hanium.sololaw.domain.cases.dto.response.ActivityLogResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseDetailResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CasePartySummaryResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
+import com.hanium.sololaw.domain.cases.entity.ActivityLog;
 import com.hanium.sololaw.domain.cases.entity.Case;
 import com.hanium.sololaw.domain.cases.entity.LitigationStage;
 import com.hanium.sololaw.domain.cases.entity.enums.CaseStatus;
@@ -25,6 +27,7 @@ import com.hanium.sololaw.domain.cases.entity.enums.StartingStage;
 import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
 import com.hanium.sololaw.domain.cases.mapper.CaseMapper;
 import com.hanium.sololaw.domain.cases.mapper.CasePartyMapper;
+import com.hanium.sololaw.domain.cases.repository.ActivityLogRepository;
 import com.hanium.sololaw.domain.cases.repository.CasePartyRepository;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
 import com.hanium.sololaw.domain.cases.repository.LitigationStageRepository;
@@ -58,6 +61,7 @@ public class CaseServiceImpl implements CaseService {
   private final DocumentRepository documentRepository;
   private final EvidenceRepository evidenceRepository;
   private final ScheduleRepository scheduleRepository;
+  private final ActivityLogRepository activityLogRepository;
   private final CaseMapper caseMapper;
   private final CasePartyMapper casePartyMapper;
 
@@ -157,20 +161,29 @@ public class CaseServiceImpl implements CaseService {
         casePartyMapper.toSummaryResponseList(casePartyRepository.findAllByCaseId(caseId));
 
     /*
-       3. 문서/증빙/일정 개수 집계
-       - 최근활동 집계는 08번 activity_logs 도메인 미구현으로 0 고정값을 사용한다.
-       - TODO: 08번 도메인 구현 후 실제 집계 값으로 교체한다.
+       3. 문서/증빙/일정/최근활동 집계
     */
     int documentCount = (int) documentRepository.countByCaseId(caseId);
     int evidenceCount = (int) evidenceRepository.countByCaseId(caseId);
     int scheduleCount = (int) scheduleRepository.countByCaseId(caseId);
+    int recentActivityCount = (int) activityLogRepository.countByCaseId(caseId);
+    List<ActivityLogResponse> recentActivities =
+        activityLogRepository.findTop5ByCaseIdOrderByCreatedAtDesc(caseId).stream()
+            .map(entry -> new ActivityLogResponse(entry.getDescription(), entry.getCreatedAt()))
+            .toList();
 
     /*
        4. ResponseDto Mapping
     */
     CaseDetailResponse result =
         caseMapper.toDetailResponse(
-            caseEntity, parties, documentCount, evidenceCount, scheduleCount, 0);
+            caseEntity,
+            parties,
+            documentCount,
+            evidenceCount,
+            scheduleCount,
+            recentActivityCount,
+            recentActivities);
 
     log.info("[CaseService] getCaseDetail() - END | caseId: {}", caseId);
     return result;
@@ -238,11 +251,20 @@ public class CaseServiceImpl implements CaseService {
             .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
 
     /*
-       2. 상태 변경
-       - reason은 요청 검증(5자 이상)만 거치고 activity_logs(08번) 미구현으로 별도 저장하지 않는다.
-       - TODO: 08번 activity_logs 도메인 구현 후 reason을 기록한다.
+       2. 상태 변경 및 활동 기록
     */
+    CaseStatus previousStatus = caseEntity.getStatus();
     caseEntity.updateStatus(request.status());
+    activityLogRepository.save(
+        ActivityLog.builder()
+            .caseId(caseId)
+            .description(
+                "사건 상태가 %s에서 %s로 변경됨: %s"
+                    .formatted(
+                        previousStatus.getDescription(),
+                        request.status().getDescription(),
+                        request.reason()))
+            .build());
 
     /*
        3. ResponseDto Mapping

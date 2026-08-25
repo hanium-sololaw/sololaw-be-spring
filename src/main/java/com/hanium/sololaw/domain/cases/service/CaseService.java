@@ -40,7 +40,7 @@ public interface CaseService {
       User user, CaseStatus status, CaseType caseType, Pageable pageable);
 
   /**
-   * 사건 상세를 조회합니다. 당사자 요약과 문서/증빙/일정 집계를 함께 반환하며, 최근활동 집계는 08번 activity_logs 도메인 미구현으로 0 고정값을 반환합니다.
+   * 사건 상세를 조회합니다. 당사자 요약과 문서/증빙/일정/최근활동 집계, 최근활동 5건(최신순)을 함께 반환합니다.
    *
    * @param user : 로그인 사용자
    * @param caseId : 조회할 사건 ID
@@ -59,7 +59,7 @@ public interface CaseService {
   CaseResponse updateCase(User user, Long caseId, UpdateCaseRequest request);
 
   /**
-   * 사건 상태를 변경합니다. reason은 검증만 하고 activity_logs(08번) 미구현으로 별도 저장하지 않습니다.
+   * 사건 상태를 변경합니다. 변경 전·후 상태와 reason을 활동 기록(ActivityLog)으로 남깁니다.
    *
    * @param user : 로그인 사용자
    * @param caseId : 상태를 변경할 사건 ID

@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hanium.sololaw.domain.cases.dto.request.CreateTodoRequest;
 import com.hanium.sololaw.domain.cases.dto.request.UpdateTodoRequest;
 import com.hanium.sololaw.domain.cases.dto.response.CaseTodoResponse;
+import com.hanium.sololaw.domain.cases.entity.ActivityLog;
 import com.hanium.sololaw.domain.cases.entity.CaseTodo;
 import com.hanium.sololaw.domain.cases.exception.CaseErrorCode;
 import com.hanium.sololaw.domain.cases.mapper.CaseTodoMapper;
+import com.hanium.sololaw.domain.cases.repository.ActivityLogRepository;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
 import com.hanium.sololaw.domain.cases.repository.CaseTodoRepository;
 import com.hanium.sololaw.domain.user.entity.User;
@@ -29,6 +31,7 @@ public class CaseTodoServiceImpl implements CaseTodoService {
 
   private final CaseRepository caseRepository;
   private final CaseTodoRepository caseTodoRepository;
+  private final ActivityLogRepository activityLogRepository;
   private final CaseTodoMapper caseTodoMapper;
 
   @Override
@@ -113,13 +116,21 @@ public class CaseTodoServiceImpl implements CaseTodoService {
     /*
        3. 내용 수정 및 완료 토글
        - null인 필드는 기존 값을 유지한다.
-       - TODO: 08번 activity_logs 도메인 구현 후 완료 시 활동을 기록한다.
+       - 미완료 -> 완료로 바뀌는 시점에만 활동을 기록한다(이미 완료된 건을 다시 저장하거나 완료 해제할 때는 남기지 않는다).
     */
     caseTodo.update(
         request.title() != null ? request.title() : caseTodo.getTitle(),
         request.dueDate() != null ? request.dueDate() : caseTodo.getDueDate());
+    boolean justCompleted = request.isDone() != null && request.isDone() && !caseTodo.getIsDone();
     if (request.isDone() != null) {
       caseTodo.updateIsDone(request.isDone());
+    }
+    if (justCompleted) {
+      activityLogRepository.save(
+          ActivityLog.builder()
+              .caseId(caseId)
+              .description("'%s' 할 일 완료".formatted(caseTodo.getTitle()))
+              .build());
     }
 
     /*
