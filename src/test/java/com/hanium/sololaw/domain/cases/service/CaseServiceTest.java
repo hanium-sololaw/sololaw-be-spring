@@ -140,6 +140,8 @@ class CaseServiceTest {
     when(activityLogRepository.countByCaseId(5L)).thenReturn(1L);
     when(activityLogRepository.findTop5ByCaseIdOrderByCreatedAtDesc(5L))
         .thenReturn(List.of(activityLog));
+    when(caseMapper.toActivityLogResponseList(List.of(activityLog)))
+        .thenReturn(List.of(new ActivityLogResponse(activityLog.getDescription(), null)));
     when(caseMapper.toDetailResponse(any(), any(), anyInt(), anyInt(), anyInt(), anyInt(), any()))
         .thenReturn(CaseDetailResponse.builder().id(5L).build());
 
