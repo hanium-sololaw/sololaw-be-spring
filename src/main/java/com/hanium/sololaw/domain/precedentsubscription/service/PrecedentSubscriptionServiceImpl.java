@@ -19,6 +19,7 @@ import com.hanium.sololaw.domain.payment.gateway.PaymentGateway;
 import com.hanium.sololaw.domain.payment.repository.PaymentRepository;
 import com.hanium.sololaw.domain.payment.repository.PendingCheckout;
 import com.hanium.sololaw.domain.payment.repository.PendingCheckoutRepository;
+import com.hanium.sololaw.domain.payment.service.PendingPaymentConfirmer;
 import com.hanium.sololaw.domain.precedentsubscription.dto.request.CheckoutRequest;
 import com.hanium.sololaw.domain.precedentsubscription.dto.request.ConfirmRequest;
 import com.hanium.sololaw.domain.precedentsubscription.dto.response.CheckoutResponse;
@@ -38,7 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PrecedentSubscriptionServiceImpl implements PrecedentSubscriptionService {
+public class PrecedentSubscriptionServiceImpl
+    implements PrecedentSubscriptionService, PendingPaymentConfirmer {
 
   private final PrecedentSubscriptionRepository precedentSubscriptionRepository;
   private final PrecedentSubscriptionMapper precedentSubscriptionMapper;
@@ -166,44 +168,59 @@ public class PrecedentSubscriptionServiceImpl implements PrecedentSubscriptionSe
         paymentGateway.confirm(request.paymentKey(), request.orderId(), request.amount());
 
     /*
-       (3) 구독 활성화
+       (3) 구독 활성화 — Stripe 웹훅과 공유하는 로직(confirmPending)에 위임한다.
     */
-    PrecedentSubscription precedentSubscription = findPrecedentSubscription(user.getId());
-    PrecedentSearchPlan targetPlan = PrecedentSearchPlan.valueOf(pending.planCode());
-    LocalDateTime nextBillingAt = LocalDateTime.now().plusMonths(1);
-    precedentSubscription.activatePrecedentPlan(targetPlan, nextBillingAt);
-    precedentSubscriptionRepository.save(precedentSubscription);
-
-    /*
-       (4) 결제 이력 저장
-    */
-    paymentRepository.save(
-        Payment.builder()
-            .userId(user.getId())
-            .subscriptionId(precedentSubscription.getId())
-            .subscriptionType(SubscriptionType.PRECEDENT_SEARCH)
-            .planCode(pending.planCode())
-            .amount(BigDecimal.valueOf(pending.amount()))
-            .provider(paymentGateway.getProvider())
-            .providerPaymentKey(confirmation.providerPaymentKey())
-            .providerOrderId(request.orderId())
-            .paidAt(confirmation.paidAt())
-            .receiptUrl(confirmation.receiptUrl())
-            .build());
-
-    /*
-       (5) 결제 대기 세션 제거
-    */
-    pendingCheckoutRepository.delete(request.orderId());
+    confirmPending(pending, request.orderId(), confirmation);
 
     PrecedentSubscriptionResponse result =
-        precedentSubscriptionMapper.toResponse(precedentSubscription);
+        precedentSubscriptionMapper.toResponse(findPrecedentSubscription(user.getId()));
 
     log.info(
         "[PrecedentSubscriptionService] confirm() - END | userId: {}, plan: {}",
         user.getId(),
         pending.planCode());
     return result;
+  }
+
+  @Override
+  public SubscriptionType getSubscriptionType() {
+    return SubscriptionType.PRECEDENT_SEARCH;
+  }
+
+  @Override
+  @Transactional
+  public void confirmPending(
+      PendingCheckout pending, String orderId, PaymentConfirmation confirmation) {
+    /*
+       (1) 구독 활성화
+    */
+    PrecedentSubscription precedentSubscription = findPrecedentSubscription(pending.userId());
+    PrecedentSearchPlan targetPlan = PrecedentSearchPlan.valueOf(pending.planCode());
+    LocalDateTime nextBillingAt = LocalDateTime.now().plusMonths(1);
+    precedentSubscription.activatePrecedentPlan(targetPlan, nextBillingAt);
+    precedentSubscriptionRepository.save(precedentSubscription);
+
+    /*
+       (2) 결제 이력 저장
+    */
+    paymentRepository.save(
+        Payment.builder()
+            .userId(pending.userId())
+            .subscriptionId(precedentSubscription.getId())
+            .subscriptionType(SubscriptionType.PRECEDENT_SEARCH)
+            .planCode(pending.planCode())
+            .amount(BigDecimal.valueOf(pending.amount()))
+            .provider(paymentGateway.getProvider())
+            .providerPaymentKey(confirmation.providerPaymentKey())
+            .providerOrderId(orderId)
+            .paidAt(confirmation.paidAt())
+            .receiptUrl(confirmation.receiptUrl())
+            .build());
+
+    /*
+       (3) 결제 대기 세션 제거
+    */
+    pendingCheckoutRepository.delete(orderId);
   }
 
   @Override

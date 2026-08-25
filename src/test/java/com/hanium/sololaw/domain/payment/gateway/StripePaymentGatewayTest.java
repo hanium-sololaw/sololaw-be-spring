@@ -38,7 +38,8 @@ class StripePaymentGatewayTest {
             "sk_test_dummy",
             "pk_test_dummy",
             "https://naholo-law-test.vercel.app/payment/success?session_id={CHECKOUT_SESSION_ID}",
-            "https://naholo-law-test.vercel.app/payment/cancel");
+            "https://naholo-law-test.vercel.app/payment/cancel",
+            "whsec_dummy");
     StripeClient client = new StripeClient(responseGetter);
     gateway = new StripePaymentGateway(client, properties);
   }
