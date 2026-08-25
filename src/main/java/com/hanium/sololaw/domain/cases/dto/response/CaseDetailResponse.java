@@ -33,5 +33,5 @@ public record CaseDetailResponse(
     @Schema(description = "문서 개수") Integer documentCount,
     @Schema(description = "증빙자료 개수") Integer evidenceCount,
     @Schema(description = "일정 개수") Integer scheduleCount,
-    @Schema(description = "최근 활동 개수, 08번 activity_logs 미구현으로 현재 0 고정")
-        Integer recentActivityCount) {}
+    @Schema(description = "최근 활동 개수") Integer recentActivityCount,
+    @Schema(description = "최근 활동 목록(최대 5건, 최신순)") List<ActivityLogResponse> recentActivities) {}

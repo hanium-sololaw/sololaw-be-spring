@@ -86,7 +86,7 @@ public class CaseController {
       description =
           """
             **Returns**  \n
-            사건 정보 + 당사자 요약 + 진행률 + 문서/증빙/일정/최근활동 집계, 최근활동은 08번 activity_logs 미구현으로 현재 0 고정
+            사건 정보 + 당사자 요약 + 진행률 + 문서/증빙/일정/최근활동 집계 + 최근활동 5건(최신순)
             """)
   @GetMapping("/{caseId}")
   public ResponseEntity<BaseResponse<CaseDetailResponse>> getCaseDetail(

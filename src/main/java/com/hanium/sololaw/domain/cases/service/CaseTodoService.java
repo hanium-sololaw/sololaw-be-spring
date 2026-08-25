@@ -34,7 +34,7 @@ public interface CaseTodoService {
   CaseTodoResponse addTodo(User user, Long caseId, CreateTodoRequest request);
 
   /**
-   * 할 일을 수정하거나 완료 토글합니다. activity_logs(08번) 미구현으로 완료 시 활동 기록은 남기지 않습니다.
+   * 할 일을 수정하거나 완료 토글합니다. 미완료에서 완료로 바뀌는 시점에만 활동 기록(ActivityLog)을 남깁니다.
    *
    * @param user : 로그인 사용자
    * @param caseId : 소속 사건 ID
