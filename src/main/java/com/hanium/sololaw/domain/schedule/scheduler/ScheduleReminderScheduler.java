@@ -15,7 +15,6 @@ import com.hanium.sololaw.domain.notification.entity.Notification;
 import com.hanium.sololaw.domain.notification.entity.enums.NotificationType;
 import com.hanium.sololaw.domain.notification.repository.NotificationRepository;
 import com.hanium.sololaw.domain.schedule.entity.Schedule;
-import com.hanium.sololaw.domain.schedule.entity.enums.ScheduleType;
 import com.hanium.sololaw.domain.schedule.repository.ScheduleRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -53,7 +52,7 @@ public class ScheduleReminderScheduler {
           Notification.builder()
               .userId(schedule.getUserId())
               .relatedCaseId(schedule.getCaseId())
-              .type(resolveNotificationType(schedule.getScheduleType()))
+              .type(NotificationType.fromScheduleType(schedule.getScheduleType()))
               .title("%s 리마인더".formatted(schedule.getTitle()))
               .content(
                   "%s 일정이 곧 도래합니다. (%s)".formatted(schedule.getTitle(), schedule.getEventDate()))
@@ -76,11 +75,5 @@ public class ScheduleReminderScheduler {
       case DAY -> eventDateTime.minusDays(schedule.getReminderValue());
       case HOUR -> eventDateTime.minusHours(schedule.getReminderValue());
     };
-  }
-
-  private NotificationType resolveNotificationType(ScheduleType scheduleType) {
-    return scheduleType == ScheduleType.HEARING
-        ? NotificationType.HEARING
-        : NotificationType.DEADLINE;
   }
 }

@@ -72,9 +72,7 @@ public class NotificationSettingReminderScheduler {
     LocalDate today = LocalDate.now();
     List<LocalDate> targetDates =
         HEARING_REMINDER_DAYS_BEFORE.stream().map(today::plusDays).toList();
-    List<Schedule> candidates =
-        scheduleRepository.findAllDueForGlobalReminder(
-            List.of(ScheduleType.HEARING, ScheduleType.SUBMISSION_DEADLINE), targetDates, today);
+    List<Schedule> candidates = scheduleRepository.findAllDueForGlobalReminder(targetDates, today);
 
     int sentCount = 0;
     for (Schedule schedule : candidates) {
@@ -82,6 +80,10 @@ public class NotificationSettingReminderScheduler {
       if (setting == null) {
         continue;
       }
+      /*
+         HEARING만 기일 토글을 타고, 나머지 전체(SUBMISSION_DEADLINE 포함 화면의 다른 일정 유형들)는
+         전부 제출기한 토글로 묶는다 — scheduleType으로 후보를 좁히지 않았으므로 모든 유형이 여기로 들어온다.
+      */
       boolean enabled =
           schedule.getScheduleType() == ScheduleType.HEARING
               ? setting.getHearingReminderAlert()
@@ -95,10 +97,7 @@ public class NotificationSettingReminderScheduler {
           Notification.builder()
               .userId(schedule.getUserId())
               .relatedCaseId(schedule.getCaseId())
-              .type(
-                  schedule.getScheduleType() == ScheduleType.HEARING
-                      ? NotificationType.HEARING
-                      : NotificationType.DEADLINE)
+              .type(NotificationType.fromScheduleType(schedule.getScheduleType()))
               .title("%s D-%d".formatted(schedule.getTitle(), daysBefore))
               .content(
                   "%s 일정이 %d일 남았습니다. (%s)"

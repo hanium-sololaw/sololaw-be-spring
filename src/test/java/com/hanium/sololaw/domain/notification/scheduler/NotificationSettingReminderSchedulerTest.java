@@ -57,7 +57,7 @@ class NotificationSettingReminderSchedulerTest {
             .scheduleType(ScheduleType.HEARING)
             .eventDate(LocalDate.now().plusDays(7))
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any()))
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any()))
         .thenReturn(List.of(schedule));
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of());
@@ -83,7 +83,7 @@ class NotificationSettingReminderSchedulerTest {
             .scheduleType(ScheduleType.HEARING)
             .eventDate(LocalDate.now().plusDays(3))
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any()))
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any()))
         .thenReturn(List.of(schedule));
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of());
@@ -111,7 +111,35 @@ class NotificationSettingReminderSchedulerTest {
             .scheduleType(ScheduleType.SUBMISSION_DEADLINE)
             .eventDate(LocalDate.now().plusDays(1))
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any()))
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any()))
+        .thenReturn(List.of(schedule));
+    when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
+        .thenReturn(List.of());
+    when(evidenceRepository.findAllByStatusAndSupplementAlertSentAtIsNull(any()))
+        .thenReturn(List.of());
+    when(notificationSettingRepository.findByUserId(1L))
+        .thenReturn(Optional.of(NotificationSetting.builder().userId(1L).build()));
+
+    scheduler.sendGlobalReminders();
+
+    verify(notificationRepository).save(any(Notification.class));
+    assertThat(schedule.getGlobalReminderSentDate()).isEqualTo(LocalDate.now());
+  }
+
+  @Test
+  void sendGlobalReminders_createsNotification_forNonHearingNonDeadlineType() {
+    // scheduleType으로 후보를 걸러내지 않으므로, HEARING·SUBMISSION_DEADLINE이 아닌 유형(예: ATTENDANCE)도
+    // 화면의 "일정 유형" 드롭다운이 어떤 값을 보내든 리마인더가 조용히 빠지지 않아야 한다.
+    Schedule schedule =
+        Schedule.builder()
+            .id(3L)
+            .userId(1L)
+            .caseId(5L)
+            .title("제1회 변론기일 출석")
+            .scheduleType(ScheduleType.ATTENDANCE)
+            .eventDate(LocalDate.now().plusDays(1))
+            .build();
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any()))
         .thenReturn(List.of(schedule));
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of());
@@ -136,7 +164,7 @@ class NotificationSettingReminderSchedulerTest {
             .dueDate(LocalDate.now().minusDays(1))
             .isDone(false)
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any())).thenReturn(List.of());
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any())).thenReturn(List.of());
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of(todo));
     when(evidenceRepository.findAllByStatusAndSupplementAlertSentAtIsNull(any()))
@@ -162,7 +190,7 @@ class NotificationSettingReminderSchedulerTest {
             .dueDate(LocalDate.now().minusDays(1))
             .isDone(false)
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any())).thenReturn(List.of());
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any())).thenReturn(List.of());
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of(todo));
     when(evidenceRepository.findAllByStatusAndSupplementAlertSentAtIsNull(any()))
@@ -189,7 +217,7 @@ class NotificationSettingReminderSchedulerTest {
             .fileName("계약서.pdf")
             .status(EvidenceStatus.NEEDS_SUPPLEMENT)
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any())).thenReturn(List.of());
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any())).thenReturn(List.of());
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of());
     when(evidenceRepository.findAllByStatusAndSupplementAlertSentAtIsNull(
@@ -215,7 +243,7 @@ class NotificationSettingReminderSchedulerTest {
             .fileName("계약서.pdf")
             .status(EvidenceStatus.NEEDS_SUPPLEMENT)
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any())).thenReturn(List.of());
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any())).thenReturn(List.of());
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of());
     when(evidenceRepository.findAllByStatusAndSupplementAlertSentAtIsNull(
@@ -245,7 +273,7 @@ class NotificationSettingReminderSchedulerTest {
             .scheduleType(ScheduleType.HEARING)
             .eventDate(LocalDate.now().plusDays(1))
             .build();
-    when(scheduleRepository.findAllDueForGlobalReminder(any(), any(), any()))
+    when(scheduleRepository.findAllDueForGlobalReminder(any(), any()))
         .thenReturn(List.of(schedule));
     when(caseTodoRepository.findAllByIsDoneFalseAndDueDateBeforeAndOverdueAlertSentAtIsNull(any()))
         .thenReturn(List.of());
