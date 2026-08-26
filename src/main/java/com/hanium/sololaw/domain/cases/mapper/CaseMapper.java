@@ -12,6 +12,7 @@ import com.hanium.sololaw.domain.cases.dto.response.ActivityLogResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseDetailResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CasePartySummaryResponse;
 import com.hanium.sololaw.domain.cases.dto.response.CaseResponse;
+import com.hanium.sololaw.domain.cases.entity.ActivityLog;
 import com.hanium.sololaw.domain.cases.entity.Case;
 
 @Component
@@ -97,5 +98,19 @@ public class CaseMapper {
         .recentActivityCount(recentActivityCount)
         .recentActivities(recentActivities)
         .build();
+  }
+
+  /**
+   * @param activityLog : 변환할 ActivityLog Entity
+   */
+  public ActivityLogResponse toActivityLogResponse(ActivityLog activityLog) {
+    return new ActivityLogResponse(activityLog.getDescription(), activityLog.getCreatedAt());
+  }
+
+  /**
+   * @param activityLogs : 변환할 ActivityLog Entity 목록
+   */
+  public List<ActivityLogResponse> toActivityLogResponseList(List<ActivityLog> activityLogs) {
+    return activityLogs.stream().map(this::toActivityLogResponse).toList();
   }
 }

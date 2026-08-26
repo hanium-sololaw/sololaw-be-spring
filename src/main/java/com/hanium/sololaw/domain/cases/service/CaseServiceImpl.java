@@ -168,9 +168,8 @@ public class CaseServiceImpl implements CaseService {
     int scheduleCount = (int) scheduleRepository.countByCaseId(caseId);
     int recentActivityCount = (int) activityLogRepository.countByCaseId(caseId);
     List<ActivityLogResponse> recentActivities =
-        activityLogRepository.findTop5ByCaseIdOrderByCreatedAtDesc(caseId).stream()
-            .map(entry -> new ActivityLogResponse(entry.getDescription(), entry.getCreatedAt()))
-            .toList();
+        caseMapper.toActivityLogResponseList(
+            activityLogRepository.findTop5ByCaseIdOrderByCreatedAtDesc(caseId));
 
     /*
        4. ResponseDto Mapping
