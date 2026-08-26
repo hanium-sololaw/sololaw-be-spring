@@ -97,10 +97,7 @@ public class NotificationSettingReminderScheduler {
           Notification.builder()
               .userId(schedule.getUserId())
               .relatedCaseId(schedule.getCaseId())
-              .type(
-                  schedule.getScheduleType() == ScheduleType.HEARING
-                      ? NotificationType.HEARING
-                      : NotificationType.DEADLINE)
+              .type(NotificationType.fromScheduleType(schedule.getScheduleType()))
               .title("%s D-%d".formatted(schedule.getTitle(), daysBefore))
               .content(
                   "%s 일정이 %d일 남았습니다. (%s)"
