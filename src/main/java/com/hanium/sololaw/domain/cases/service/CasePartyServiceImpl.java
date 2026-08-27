@@ -117,7 +117,13 @@ public class CasePartyServiceImpl implements CasePartyService {
     caseParty.updateDetails(
         encryptedResidentNo,
         request.address() != null ? request.address() : caseParty.getAddress(),
-        request.phone() != null ? request.phone() : caseParty.getPhone());
+        request.phone() != null ? request.phone() : caseParty.getPhone(),
+        request.email() != null ? request.email() : caseParty.getEmail(),
+        request.serviceAddress() != null ? request.serviceAddress() : caseParty.getServiceAddress(),
+        request.fax() != null ? request.fax() : caseParty.getFax(),
+        request.representative() != null
+            ? request.representative()
+            : caseParty.getRepresentative());
 
     /*
        4. ResponseDto Mapping

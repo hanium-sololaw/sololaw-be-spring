@@ -45,13 +45,36 @@ public class CaseParty extends BaseTimeEntity {
   @Column(length = 20)
   private String phone;
 
+  @Column(length = 255)
+  private String email;
+
+  @Column(name = "service_address", length = 500)
+  private String serviceAddress;
+
+  @Column(length = 20)
+  private String fax;
+
+  @Column(length = 100)
+  private String representative;
+
   @Builder.Default
   @Column(nullable = false)
   private Boolean isSelf = false;
 
-  public void updateDetails(String residentNo, String address, String phone) {
+  public void updateDetails(
+      String residentNo,
+      String address,
+      String phone,
+      String email,
+      String serviceAddress,
+      String fax,
+      String representative) {
     this.residentNo = residentNo;
     this.address = address;
     this.phone = phone;
+    this.email = email;
+    this.serviceAddress = serviceAddress;
+    this.fax = fax;
+    this.representative = representative;
   }
 }
