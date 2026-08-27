@@ -33,7 +33,17 @@ class LitigationCostServiceImplTest {
             BigDecimal.valueOf(5_000_000), 2, 1, FilingMethod.ELECTRONIC, LitigationInstance.FIRST);
     LitigationCostResponse expected =
         new LitigationCostResponse(
-            5_000_000, true, true, LitigationInstance.FIRST, 22_500, 3, 22_503, 3, 10, "안내");
+            5_000_000,
+            true,
+            true,
+            LitigationInstance.FIRST,
+            22_500,
+            3,
+            22_503,
+            500_000,
+            3,
+            10,
+            "안내");
 
     when(litigationCostCalculator.calculate(
             BigDecimal.valueOf(5_000_000), 3, FilingMethod.ELECTRONIC, LitigationInstance.FIRST))

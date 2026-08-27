@@ -186,4 +186,70 @@ class LitigationCostCalculatorTest {
     // 1심 인지액 25,000 * 1.5 = 37,500 -> 전자소송 10% 감경 -> 33,750
     assertThat(result.stampFee()).isEqualTo(33_750);
   }
+
+  @Test
+  void calculate_appliesAttorneyFeeMinimum_whenClaimAmountVerySmall() {
+    LitigationCostResponse result =
+        calculator.calculate(
+            BigDecimal.valueOf(1_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+
+    // raw = 1,000,000 * 10% = 100,000 -> 최소 30만원 적용
+    assertThat(result.attorneyFeeCap()).isEqualTo(300_000);
+  }
+
+  @Test
+  void calculate_appliesAttorneyFeeFirstBracket_upTo20Million() {
+    LitigationCostResponse result =
+        calculator.calculate(
+            BigDecimal.valueOf(10_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+
+    // 10,000,000 * 10% = 1,000,000
+    assertThat(result.attorneyFeeCap()).isEqualTo(1_000_000);
+  }
+
+  @Test
+  void calculate_appliesAttorneyFeeSecondBracket_between20And50Million() {
+    LitigationCostResponse result =
+        calculator.calculate(
+            BigDecimal.valueOf(30_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+
+    // 2,000,000 + (30,000,000 - 20,000,000) * 8% = 2,800,000
+    assertThat(result.attorneyFeeCap()).isEqualTo(2_800_000);
+  }
+
+  @Test
+  void calculate_appliesAttorneyFeeIsContinuousAcrossBracketBoundaries() {
+    LitigationCostResponse at50m =
+        calculator.calculate(
+            BigDecimal.valueOf(50_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+    LitigationCostResponse at100m =
+        calculator.calculate(
+            BigDecimal.valueOf(100_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+    LitigationCostResponse at500m =
+        calculator.calculate(
+            BigDecimal.valueOf(500_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+
+    assertThat(at50m.attorneyFeeCap()).isEqualTo(4_400_000);
+    assertThat(at100m.attorneyFeeCap()).isEqualTo(7_400_000);
+    assertThat(at500m.attorneyFeeCap()).isEqualTo(13_400_000);
+  }
+
+  @Test
+  void calculate_appliesAttorneyFeeLastBracket_over500Million() {
+    LitigationCostResponse result =
+        calculator.calculate(
+            BigDecimal.valueOf(600_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+
+    // 13,400,000 + (600,000,000 - 500,000,000) * 0.5% = 13,900,000
+    assertThat(result.attorneyFeeCap()).isEqualTo(13_900_000);
+  }
+
+  @Test
+  void calculate_excludesAttorneyFeeCapFromTotalCost() {
+    LitigationCostResponse result =
+        calculator.calculate(
+            BigDecimal.valueOf(10_000_000), 2, FilingMethod.PAPER, LitigationInstance.FIRST);
+
+    assertThat(result.totalCost()).isEqualTo(result.stampFee() + result.deliveryFee());
+  }
 }
