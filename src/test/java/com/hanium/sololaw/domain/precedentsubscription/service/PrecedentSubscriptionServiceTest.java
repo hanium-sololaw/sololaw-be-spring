@@ -292,4 +292,119 @@ class PrecedentSubscriptionServiceTest {
     assertThat(precedentSubscription.getStatus()).isEqualTo(SubscriptionStatus.CANCELED);
     assertThat(precedentSubscription.getCanceledAt()).isNotNull();
   }
+
+  @Test
+  void getEffectivePlan_returnsFree_whenNoSubscriptionRow() {
+    User user = User.builder().id(1L).build();
+    when(precedentSubscriptionRepository.findByUserId(1L)).thenReturn(Optional.empty());
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.FREE);
+  }
+
+  @Test
+  void getEffectivePlan_returnsStoredPlan_whenActivePremium() {
+    User user = User.builder().id(1L).build();
+    PrecedentSubscription precedentSubscription =
+        PrecedentSubscription.builder()
+            .userId(1L)
+            .plan(PrecedentSearchPlan.PREMIUM)
+            .status(SubscriptionStatus.ACTIVE)
+            .build();
+    when(precedentSubscriptionRepository.findByUserId(1L))
+        .thenReturn(Optional.of(precedentSubscription));
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.PREMIUM);
+  }
+
+  @Test
+  void getEffectivePlan_returnsFree_whenActiveFree() {
+    User user = User.builder().id(1L).build();
+    PrecedentSubscription precedentSubscription =
+        PrecedentSubscription.builder()
+            .userId(1L)
+            .plan(PrecedentSearchPlan.FREE)
+            .status(SubscriptionStatus.ACTIVE)
+            .build();
+    when(precedentSubscriptionRepository.findByUserId(1L))
+        .thenReturn(Optional.of(precedentSubscription));
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.FREE);
+  }
+
+  @Test
+  void getEffectivePlan_returnsStoredPlan_whenCanceledButBeforeNextBillingAt() {
+    User user = User.builder().id(1L).build();
+    PrecedentSubscription precedentSubscription =
+        PrecedentSubscription.builder()
+            .userId(1L)
+            .plan(PrecedentSearchPlan.PREMIUM)
+            .status(SubscriptionStatus.CANCELED)
+            .nextBillingAt(LocalDateTime.now().plusDays(10))
+            .build();
+    when(precedentSubscriptionRepository.findByUserId(1L))
+        .thenReturn(Optional.of(precedentSubscription));
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.PREMIUM);
+  }
+
+  @Test
+  void getEffectivePlan_returnsFree_whenCanceledAndPastNextBillingAt() {
+    User user = User.builder().id(1L).build();
+    PrecedentSubscription precedentSubscription =
+        PrecedentSubscription.builder()
+            .userId(1L)
+            .plan(PrecedentSearchPlan.PREMIUM)
+            .status(SubscriptionStatus.CANCELED)
+            .nextBillingAt(LocalDateTime.now().minusDays(1))
+            .build();
+    when(precedentSubscriptionRepository.findByUserId(1L))
+        .thenReturn(Optional.of(precedentSubscription));
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.FREE);
+  }
+
+  @Test
+  void getEffectivePlan_returnsFree_whenCanceledAndNextBillingAtNull() {
+    User user = User.builder().id(1L).build();
+    PrecedentSubscription precedentSubscription =
+        PrecedentSubscription.builder()
+            .userId(1L)
+            .plan(PrecedentSearchPlan.PREMIUM)
+            .status(SubscriptionStatus.CANCELED)
+            .build();
+    when(precedentSubscriptionRepository.findByUserId(1L))
+        .thenReturn(Optional.of(precedentSubscription));
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.FREE);
+  }
+
+  @Test
+  void getEffectivePlan_returnsFree_whenExpiredStatus() {
+    User user = User.builder().id(1L).build();
+    PrecedentSubscription precedentSubscription =
+        PrecedentSubscription.builder()
+            .userId(1L)
+            .plan(PrecedentSearchPlan.PREMIUM)
+            .status(SubscriptionStatus.EXPIRED)
+            .nextBillingAt(LocalDateTime.now().plusDays(10))
+            .build();
+    when(precedentSubscriptionRepository.findByUserId(1L))
+        .thenReturn(Optional.of(precedentSubscription));
+
+    PrecedentSearchPlan result = precedentSubscriptionService.getEffectivePlan(user);
+
+    assertThat(result).isEqualTo(PrecedentSearchPlan.FREE);
+  }
 }

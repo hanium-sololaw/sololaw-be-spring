@@ -252,6 +252,28 @@ public class PrecedentSubscriptionServiceImpl
     return result;
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public PrecedentSearchPlan getEffectivePlan(User user) {
+    return precedentSubscriptionRepository
+        .findByUserId(user.getId())
+        .map(this::resolveEffectivePlan)
+        .orElse(PrecedentSearchPlan.FREE);
+  }
+
+  private PrecedentSearchPlan resolveEffectivePlan(PrecedentSubscription precedentSubscription) {
+    if (precedentSubscription.getStatus() == SubscriptionStatus.ACTIVE) {
+      return precedentSubscription.getPlan();
+    }
+    LocalDateTime nextBillingAt = precedentSubscription.getNextBillingAt();
+    if (precedentSubscription.getStatus() == SubscriptionStatus.CANCELED
+        && nextBillingAt != null
+        && nextBillingAt.isAfter(LocalDateTime.now())) {
+      return precedentSubscription.getPlan();
+    }
+    return PrecedentSearchPlan.FREE;
+  }
+
   private PrecedentSubscription findPrecedentSubscription(Long userId) {
     return precedentSubscriptionRepository
         .findByUserId(userId)
