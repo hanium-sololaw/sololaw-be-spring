@@ -7,6 +7,7 @@ import com.hanium.sololaw.domain.precedentsubscription.dto.request.CheckoutReque
 import com.hanium.sololaw.domain.precedentsubscription.dto.request.ConfirmRequest;
 import com.hanium.sololaw.domain.precedentsubscription.dto.response.CheckoutResponse;
 import com.hanium.sololaw.domain.precedentsubscription.dto.response.PrecedentSubscriptionResponse;
+import com.hanium.sololaw.domain.precedentsubscription.entity.enums.PrecedentSearchPlan;
 import com.hanium.sololaw.domain.user.entity.User;
 
 public interface PrecedentSubscriptionService {
@@ -44,4 +45,16 @@ public interface PrecedentSubscriptionService {
    * @return 갱신된 PrecedentSubscriptionResponse
    */
   PrecedentSubscriptionResponse cancel(User user);
+
+  /**
+   * [ 현재 유효한 판례검색 플랜 실시간 계산 메서드 ]
+   *
+   * <p>저장된 plan·status는 해지 후 유예기간이 지나도 그대로 남아있을 수 있어(만료 처리 배치 없음) 그대로 신뢰할 수 없다. status와
+   * nextBillingAt(다음 결제 예정일)을 함께 봐서 지금 시점에 실제로 유효한 플랜을 계산한다. 구독 행이 없거나 애매한 상태는 전부 FREE로 안전하게 처리하며
+   * 예외를 던지지 않는다(nginx 내부 인증 검증 API에서 사용 — 실패해도 항상 폴백 가능해야 함).
+   *
+   * @param user 로그인한 사용자(@CurrentUser로 주입)
+   * @return 지금 시점에 유효한 PrecedentSearchPlan
+   */
+  PrecedentSearchPlan getEffectivePlan(User user);
 }
