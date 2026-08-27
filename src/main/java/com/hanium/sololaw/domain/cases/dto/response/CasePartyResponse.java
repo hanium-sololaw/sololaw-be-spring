@@ -19,6 +19,10 @@ public record CasePartyResponse(
     @Schema(description = "주민등록번호(마스킹)", example = "990101-1******") String residentNoMasked,
     @Schema(description = "주소") String address,
     @Schema(description = "연락처") String phone,
+    @Schema(description = "이메일") String email,
+    @Schema(description = "송달받을 주소(주소와 다를 경우)") String serviceAddress,
+    @Schema(description = "팩스") String fax,
+    @Schema(description = "법인 대표자·법정대리인") String representative,
     @Schema(description = "원고(나) 여부") Boolean isSelf,
     @Schema(description = "생성 시각") LocalDateTime createdAt,
     @Schema(description = "수정 시각") LocalDateTime modifiedAt) {}
