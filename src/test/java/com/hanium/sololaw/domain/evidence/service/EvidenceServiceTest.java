@@ -84,6 +84,21 @@ class EvidenceServiceTest {
   }
 
   @Test
+  void createUploadUrl_throwsInvalidFileType_whenContentTypeNotAllowed() {
+    User user = User.builder().id(1L).build();
+    CreateEvidenceUploadUrlRequest request =
+        new CreateEvidenceUploadUrlRequest(5L, "malicious.svg", "image/svg+xml", 1000L);
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+
+    assertThatThrownBy(() -> evidenceService.createUploadUrl(user, request))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(EvidenceErrorCode.INVALID_FILE_TYPE);
+  }
+
+  @Test
   void createUploadUrl_returnsPresignedUrl_whenWithinQuota() {
     User user = User.builder().id(1L).build();
     CreateEvidenceUploadUrlRequest request =
@@ -196,9 +211,16 @@ class EvidenceServiceTest {
   @Test
   void getDownloadUrl_returnsPresignedUrl() {
     User user = User.builder().id(1L).build();
-    Evidence evidence = Evidence.builder().id(40L).caseId(5L).fileUrl("evidence/5/key.pdf").build();
+    Evidence evidence =
+        Evidence.builder()
+            .id(40L)
+            .caseId(5L)
+            .fileUrl("evidence/5/key.pdf")
+            .fileName("계약서.pdf")
+            .build();
     when(evidenceRepository.findByIdAndUserId(40L, 1L)).thenReturn(Optional.of(evidence));
-    when(s3Uploader.generatePresignedGetUrl("evidence/5/key.pdf", Duration.ofMinutes(10)))
+    when(s3Uploader.generatePresignedGetUrl(
+            "evidence/5/key.pdf", Duration.ofMinutes(10), "계약서.pdf"))
         .thenReturn("https://s3.example.com/presigned-get");
 
     String result = evidenceService.getDownloadUrl(user, 40L);

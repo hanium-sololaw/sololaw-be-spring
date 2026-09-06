@@ -4,6 +4,7 @@
 package com.hanium.sololaw.domain.evidence.service;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -43,6 +44,12 @@ public class EvidenceServiceImpl implements EvidenceService {
 
   private static final Duration UPLOAD_URL_EXPIRY = Duration.ofMinutes(10);
   private static final Duration DOWNLOAD_URL_EXPIRY = Duration.ofMinutes(10);
+  private static final Set<String> ALLOWED_CONTENT_TYPES =
+      Set.of(
+          "application/pdf",
+          "image/jpeg",
+          "image/png",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
   private final CaseRepository caseRepository;
   private final EvidenceRepository evidenceRepository;
@@ -67,7 +74,15 @@ public class EvidenceServiceImpl implements EvidenceService {
         .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
 
     /*
-       2. 용량 사전 확인
+       2. 파일 형식 검증 — 화이트리스트에 없는 MIME 타입은 업로드 URL 자체를 발급하지 않는다.
+       presigned URL의 서명에 contentType이 포함돼 실제 업로드 시에도 이 값과 다르게 보낼 수 없다.
+    */
+    if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
+      throw new CustomException(EvidenceErrorCode.INVALID_FILE_TYPE);
+    }
+
+    /*
+       3. 용량 사전 확인
        - 최종 확정은 createEvidence()의 원자 UPDATE에서 이뤄지며, 여기서는 업로드 전 UX용 단순 조회 비교다.
     */
     Subscription subscription =
@@ -80,7 +95,7 @@ public class EvidenceServiceImpl implements EvidenceService {
     }
 
     /*
-       3. presigned PUT URL 발급
+       4. presigned PUT URL 발급
     */
     String key =
         "evidence/%d/%s-%s".formatted(request.caseId(), UUID.randomUUID(), request.fileName());
@@ -255,7 +270,8 @@ public class EvidenceServiceImpl implements EvidenceService {
 
     Evidence evidence = findOwnedEvidence(evidenceId, user.getId());
     String downloadUrl =
-        s3Uploader.generatePresignedGetUrl(evidence.getFileUrl(), DOWNLOAD_URL_EXPIRY);
+        s3Uploader.generatePresignedGetUrl(
+            evidence.getFileUrl(), DOWNLOAD_URL_EXPIRY, evidence.getFileName());
 
     log.info("[EvidenceService] getDownloadUrl() - END | evidenceId: {}", evidenceId);
     return downloadUrl;

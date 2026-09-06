@@ -290,8 +290,9 @@ public class DocumentServiceImpl implements DocumentService {
     if (document.getFileUrl() == null) {
       throw new CustomException(DocumentErrorCode.DOCUMENT_FILE_NOT_AVAILABLE);
     }
+    String fileName = document.getTitle() != null ? document.getTitle() : "document.txt";
     String presignedUrl =
-        s3Uploader.generatePresignedGetUrl(document.getFileUrl(), DOWNLOAD_URL_EXPIRY);
+        s3Uploader.generatePresignedGetUrl(document.getFileUrl(), DOWNLOAD_URL_EXPIRY, fileName);
 
     log.info("[DocumentService] getDownloadUrl() - END | documentId: {}", documentId);
     return presignedUrl;
