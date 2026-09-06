@@ -22,7 +22,7 @@ public record CreateEvidenceRequest(
     @NotBlank @Schema(description = "파일명") String fileName,
     @NotBlank @Schema(description = "업로드된 S3 객체 키(upload-url 발급 시 받은 key)") String fileUrl,
     @NotNull @Positive @Schema(description = "파일 크기(바이트)") Long fileSize,
-    @Schema(description = "파일 타입(PDF/JPG/PNG/DOCX)") String fileType,
+    @Schema(description = "파일 타입(PDF/JPG/PNG/GIF/WEBP/HEIC/DOCX/HWP)") String fileType,
     @Schema(description = "입증취지") String proofPurpose,
     @Schema(description = "설명") String description,
     @Schema(description = "태그 목록") List<String> tags,

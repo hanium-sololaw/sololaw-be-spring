@@ -53,15 +53,22 @@ public class S3Uploader {
   }
 
   /**
-   * 지정한 키의 객체를 다운로드할 수 있는 presigned GET URL을 발급합니다.
+   * 지정한 키의 객체를 다운로드할 수 있는 presigned GET URL을 발급합니다. 브라우저가 응답을 인라인 렌더링하지 않고 무조건 다운로드하도록 {@code
+   * Content-Disposition: attachment}를 강제한다 — 업로드 시 검증을 통과하지 못한 콘텐츠가 섞여 있더라도 브라우저에서 실행되지 않도록 하는 방어
+   * 계층이다.
    *
    * @param key 대상 S3 객체 키
    * @param expiry URL 유효 기간
+   * @param fileName 다운로드 시 사용할 파일명(Content-Disposition에 반영)
    * @return presigned GET URL
    */
-  public String generatePresignedGetUrl(String key, Duration expiry) {
+  public String generatePresignedGetUrl(String key, Duration expiry, String fileName) {
     GetObjectRequest getObjectRequest =
-        GetObjectRequest.builder().bucket(s3Properties.getBucket()).key(key).build();
+        GetObjectRequest.builder()
+            .bucket(s3Properties.getBucket())
+            .key(key)
+            .responseContentDisposition("attachment; filename=\"%s\"".formatted(fileName))
+            .build();
     GetObjectPresignRequest presignRequest =
         GetObjectPresignRequest.builder()
             .signatureDuration(expiry)

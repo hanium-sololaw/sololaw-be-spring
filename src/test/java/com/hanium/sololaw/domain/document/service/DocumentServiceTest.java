@@ -148,7 +148,8 @@ class DocumentServiceTest {
     Document document =
         Document.builder().id(41L).userId(1L).fileUrl("documents/41/key.txt").build();
     when(documentRepository.findByIdAndUserId(41L, 1L)).thenReturn(Optional.of(document));
-    when(s3Uploader.generatePresignedGetUrl("documents/41/key.txt", Duration.ofMinutes(10)))
+    when(s3Uploader.generatePresignedGetUrl(
+            "documents/41/key.txt", Duration.ofMinutes(10), "document.txt"))
         .thenReturn("https://s3.example.com/presigned");
 
     String result = documentService.getDownloadUrl(user, 41L);
