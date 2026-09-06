@@ -3,7 +3,7 @@ services:
     image: ${DOCKER_USERNAME}/${DOCKER_REPO}:${DOCKER_TAG:-dev-latest}
     container_name: sololaw-be-spring
     ports:
-      - "18080:8080"
+      - "127.0.0.1:18080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       TZ: Asia/Seoul
