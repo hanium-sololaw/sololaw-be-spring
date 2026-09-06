@@ -49,7 +49,13 @@ public class EvidenceServiceImpl implements EvidenceService {
           "application/pdf",
           "image/jpeg",
           "image/png",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+          "image/gif",
+          "image/webp",
+          "image/heic",
+          "image/heif",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/x-hwp",
+          "application/vnd.hancom.hwp");
 
   private final CaseRepository caseRepository;
   private final EvidenceRepository evidenceRepository;

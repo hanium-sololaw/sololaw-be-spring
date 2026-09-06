@@ -99,6 +99,29 @@ class EvidenceServiceTest {
   }
 
   @Test
+  void createUploadUrl_returnsPresignedUrl_forEachAllowedContentType() {
+    User user = User.builder().id(1L).build();
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+    Subscription subscription =
+        Subscription.builder().userId(1L).storageLimitBytes(500_000L).usedStorageBytes(0L).build();
+
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(subscriptionRepository.findByUserId(1L)).thenReturn(Optional.of(subscription));
+    when(s3Uploader.generatePresignedPutUrl(
+            anyString(), anyString(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn("https://s3.example.com/presigned-put");
+
+    for (String contentType :
+        java.util.List.of("image/gif", "image/webp", "image/heic", "application/x-hwp")) {
+      CreateEvidenceUploadUrlRequest request =
+          new CreateEvidenceUploadUrlRequest(5L, "file", contentType, 1000L);
+
+      assertThat(evidenceService.createUploadUrl(user, request).uploadUrl())
+          .isEqualTo("https://s3.example.com/presigned-put");
+    }
+  }
+
+  @Test
   void createUploadUrl_returnsPresignedUrl_whenWithinQuota() {
     User user = User.builder().id(1L).build();
     CreateEvidenceUploadUrlRequest request =
