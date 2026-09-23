@@ -19,6 +19,8 @@ public interface CaseRepository extends JpaRepository<Case, Long> {
 
   Optional<Case> findByIdAndUserId(Long id, Long userId);
 
+  Optional<Case> findByCaseNumberAndUserId(String caseNumber, Long userId);
+
   @Query(
       "SELECT c FROM Case c WHERE c.userId = :userId "
           + "AND (:status IS NULL OR c.status = :status) "

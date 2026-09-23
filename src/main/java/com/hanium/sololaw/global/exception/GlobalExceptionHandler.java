@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.hanium.sololaw.global.common.BaseResponse;
 import com.hanium.sololaw.global.exception.model.BaseErrorCode;
@@ -76,6 +77,15 @@ public class GlobalExceptionHandler {
     log.warn("[Exception] 잘못된 요청 값 입력 - {}", e.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(BaseResponse.error(HttpStatus.BAD_REQUEST.value(), "올바르지 않은 요청 값입니다."));
+  }
+
+  // 업로드 파일이 spring.servlet.multipart.max-file-size를 초과(멀티파트 업로드는 컨트롤러 진입 전에 걸러짐)
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<BaseResponse<?>> handleMaxUploadSizeExceededException(
+      MaxUploadSizeExceededException ex) {
+    log.warn("[Exception] 업로드 파일 용량 초과 - {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(BaseResponse.error(400, "파일이 너무 큽니다. 10MB 이하로 업로드해주세요."));
   }
 
   // 잘못된 sort 필드명 등 Spring Data JPA API 오용(클라이언트 입력 오류)
