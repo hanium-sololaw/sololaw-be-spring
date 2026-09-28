@@ -49,7 +49,11 @@ public class CourtDocumentServiceImpl implements CourtDocumentService {
 
   private static final String USER_PROMPT = "이 법원 문서에서 정보를 추출해줘.";
 
-  /** 표준 JSON Schema — nullable 필드는 {@code type: ["string","null"]}로 표현(Gemini·OpenAI 공통 문법). */
+  /**
+   * Gemini {@code response_schema}는 표준 JSON Schema가 아니라 protobuf 기반 OpenAPI 서브셋이다 — nullable은
+   * {@code type} 배열이 아니라 별도 {@code nullable: true} 필드로 표현하고, {@code additionalProperties} 필드는 아예
+   * 존재하지 않는다(넣으면 400 에러). 실제 API 호출로 확인함.
+   */
   private static final Map<String, Object> RESPONSE_SCHEMA =
       Map.of(
           "type",
@@ -79,9 +83,7 @@ public class CourtDocumentServiceImpl implements CourtDocumentService {
               "court",
               "division",
               "submissionDeadline",
-              "deadlineType"),
-          "additionalProperties",
-          false);
+              "deadlineType"));
 
   private final CourtDocumentRateLimiter rateLimiter;
   private final CourtDocumentFileConverter fileConverter;
@@ -205,7 +207,7 @@ public class CourtDocumentServiceImpl implements CourtDocumentService {
 
   private static Map<String, Object> nullableString(String description) {
     return description == null
-        ? Map.of("type", List.of("string", "null"))
-        : Map.of("type", List.of("string", "null"), "description", description);
+        ? Map.of("type", "STRING", "nullable", true)
+        : Map.of("type", "STRING", "nullable", true, "description", description);
   }
 }
