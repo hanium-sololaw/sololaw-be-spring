@@ -4,22 +4,19 @@ services:
     container_name: sololaw-be-spring
     ports:
       - "127.0.0.1:18080:8080"
+    # .env의 모든 값을 그대로 컨테이너에 전달한다 — 새 환경변수(비밀키·설정값)를 추가할 때마다 이 파일에
+    # 매번 줄을 추가해야 했던 구조라, 추가를 깜빡하면 .env에 값이 있어도 컨테이너는 조용히 빈 값으로 받는
+    # 문제가 반복됐다(GEMINI_API_KEY 누락, TOSS_*/STRIPE_* 미연동). .env가 이미 이 앱 하나만을 위한
+    # 파일이라 통째로 넘겨도 격리상 손해볼 게 없다.
+    env_file:
+      - .env
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      TZ: Asia/Seoul
-
+      # 도커 네트워크 내부 호스트명 — .env에 없는 값이라 별도로 명시한다
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      SWAGGER_SERVER_URL: ${SWAGGER_SERVER_URL}
-
-      JWT_SECRET: ${JWT_SECRET}
+      TZ: Asia/Seoul
 
       JAVA_OPTS: >-
         -Xms256m -Xmx512m
