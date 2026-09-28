@@ -50,7 +50,9 @@ public class GeminiVisionClient {
    * @param userPrompt 사용자 프롬프트(텍스트)
    * @param fileDataUri {@code data:<mime>;base64,<...>} 형태의 파일 — Gemini는 PDF도 이미지와 동일한
    *     방식(inlineData)으로 그대로 받을 수 있어 별도 렌더링이 필요 없다
-   * @param responseSchema JSON Schema(표준 형식 — nullable은 {@code type: [".., "null"]} 배열로 표현)
+   * @param responseSchema Gemini {@code response_schema}(protobuf 기반 OpenAPI 서브셋 — 표준 JSON Schema가
+   *     아니다. nullable은 {@code type} 배열이 아니라 별도 {@code nullable: true} 필드로 표현하고, {@code
+   *     additionalProperties} 필드는 지원하지 않는다)
    * @param targetType 역직렬화할 대상 타입
    * @param failureErrorCode 호출 실패·응답 파싱 실패 시 던질 도메인별 에러코드(호출부가 결정)
    * @return {@code targetType}으로 역직렬화된 추출 결과
