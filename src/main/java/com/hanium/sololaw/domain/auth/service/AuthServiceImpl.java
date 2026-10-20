@@ -178,6 +178,7 @@ public class AuthServiceImpl implements AuthService {
     jwtProvider.validateToken(refreshToken, TokenType.REFRESH_TOKEN);
     String jti = jwtProvider.getJtiFromToken(refreshToken);
     refreshTokenRepository.validateStoredRefreshToken(refreshToken, jti);
+    boolean rememberMe = jwtProvider.getRememberMeFromToken(refreshToken);
 
     /*
        (2) 사용자 조회 및 기존 리프레시 토큰 삭제 (재사용 방지)
@@ -192,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
 
     /*
        (3) 새 액세스/리프레시 토큰 발급 및 저장
-       - 리프레시 시에는 기본(short) TTL을 사용한다.
+       - 원래 세션의 rememberMe 여부를 그대로 이어받아 TTL을 결정한다(로그인 유지가 refresh마다 풀리지 않도록).
     */
     UserDetails userDetails = userDetailsService.loadUserByUsername(loginId);
     Authentication authentication =
@@ -200,10 +201,13 @@ public class AuthServiceImpl implements AuthService {
 
     String newAccessToken = jwtProvider.generateAccessToken(authentication);
     GeneratedRefreshTokenPayload generatedRefreshTokenPayload =
-        jwtProvider.generateRefreshToken(authentication, false);
+        jwtProvider.generateRefreshToken(authentication, rememberMe);
     String newRefreshToken = generatedRefreshTokenPayload.token();
 
-    long refreshTokenTtl = jwtProperties.getRefreshTokenShortValidityInSeconds();
+    long refreshTokenTtl =
+        rememberMe
+            ? jwtProperties.getRefreshTokenLongValidityInSeconds()
+            : jwtProperties.getRefreshTokenShortValidityInSeconds();
     refreshTokenRepository.saveRefreshToken(
         newRefreshToken, generatedRefreshTokenPayload.jti(), refreshTokenTtl, user.getId());
 

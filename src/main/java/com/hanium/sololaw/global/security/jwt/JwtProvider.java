@@ -88,6 +88,7 @@ public class JwtProvider {
         Jwts.builder()
             .subject(loginId)
             .claim("type", TokenType.REFRESH_TOKEN.name())
+            .claim("rememberMe", rememberMe)
             .issuedAt(issuedAt)
             .expiration(expiration)
             .id(jti)
@@ -102,6 +103,16 @@ public class JwtProvider {
 
   public String getJtiFromToken(String token) {
     return extractClaims(token).getId();
+  }
+
+  /**
+   * 리프레시 토큰에 심어둔 rememberMe 여부를 꺼냅니다. 재발급 시 원래 세션의 로그인 유지 여부를 그대로 이어가기 위해 쓰입니다.
+   *
+   * @param token 리프레시 토큰
+   * @return rememberMe 여부
+   */
+  public boolean getRememberMeFromToken(String token) {
+    return Boolean.TRUE.equals(extractClaims(token).get("rememberMe", Boolean.class));
   }
 
   public List<GrantedAuthority> getAuthoritiesFromToken(String token) {
