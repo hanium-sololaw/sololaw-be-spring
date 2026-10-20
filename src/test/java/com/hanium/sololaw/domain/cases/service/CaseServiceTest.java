@@ -43,11 +43,14 @@ import com.hanium.sololaw.domain.cases.repository.ActivityLogRepository;
 import com.hanium.sololaw.domain.cases.repository.CasePartyRepository;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
 import com.hanium.sololaw.domain.cases.repository.LitigationStageRepository;
+import com.hanium.sololaw.domain.document.entity.Document;
 import com.hanium.sololaw.domain.document.repository.DocumentRepository;
+import com.hanium.sololaw.domain.evidence.entity.Evidence;
 import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
 import com.hanium.sololaw.domain.schedule.repository.ScheduleRepository;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.exception.CustomException;
+import com.hanium.sololaw.global.storage.S3Uploader;
 
 @ExtendWith(MockitoExtension.class)
 class CaseServiceTest {
@@ -61,6 +64,7 @@ class CaseServiceTest {
   @Mock private ActivityLogRepository activityLogRepository;
   @Mock private CaseMapper caseMapper;
   @Mock private CasePartyMapper casePartyMapper;
+  @Mock private S3Uploader s3Uploader;
 
   @InjectMocks private CaseServiceImpl caseService;
 
@@ -217,5 +221,31 @@ class CaseServiceTest {
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(CaseErrorCode.CASE_NOT_FOUND);
+  }
+
+  @Test
+  void deleteCase_deletesS3FilesForEvidenceAndDocuments_beforeDbDelete() {
+    User user = User.builder().id(1L).build();
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+    Evidence evidenceWithFile =
+        Evidence.builder().id(10L).caseId(5L).fileUrl("evidence/5/a.pdf").build();
+    Evidence evidenceWithoutFile = Evidence.builder().id(11L).caseId(5L).fileUrl(null).build();
+    Document documentWithFile =
+        Document.builder().id(20L).caseId(5L).userId(1L).fileUrl("documents/5/b.txt").build();
+    Document documentWithoutFile =
+        Document.builder().id(21L).caseId(5L).userId(1L).fileUrl(null).build();
+
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(evidenceRepository.findAllByCaseId(5L))
+        .thenReturn(List.of(evidenceWithFile, evidenceWithoutFile));
+    when(documentRepository.findAllByCaseId(5L))
+        .thenReturn(List.of(documentWithFile, documentWithoutFile));
+
+    caseService.deleteCase(user, 5L);
+
+    verify(s3Uploader).deleteObject("evidence/5/a.pdf");
+    verify(s3Uploader).deleteObject("documents/5/b.txt");
+    verify(s3Uploader, org.mockito.Mockito.times(2)).deleteObject(any());
+    verify(caseRepository).delete(ownedCase);
   }
 }

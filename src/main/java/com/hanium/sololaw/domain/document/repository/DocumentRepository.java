@@ -3,6 +3,7 @@
  */
 package com.hanium.sololaw.domain.document.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -22,6 +23,12 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
   Optional<Document> findByCaseIdAndDocTypeAndIsLatestTrue(Long caseId, DocType docType);
 
   long countByCaseId(Long caseId);
+
+  /** 사건 삭제 시 S3 파일을 먼저 정리하기 위해, DB CASCADE가 지우기 전에 해당 사건의 문서를 모두 가져온다. */
+  List<Document> findAllByCaseId(Long caseId);
+
+  /** 회원 탈퇴 시 S3 파일을 먼저 정리하기 위해 쓴다. */
+  List<Document> findAllByUserId(Long userId);
 
   @Query(
       "SELECT d FROM Document d WHERE d.userId = :userId "

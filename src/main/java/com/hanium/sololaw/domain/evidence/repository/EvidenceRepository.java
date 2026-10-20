@@ -49,4 +49,12 @@ public interface EvidenceRepository extends JpaRepository<Evidence, Long> {
   long countByCaseId(Long caseId);
 
   List<Evidence> findAllByStatusAndSupplementAlertSentAtIsNull(EvidenceStatus status);
+
+  /** 사건 삭제 시 S3 파일을 먼저 정리하기 위해, DB CASCADE가 지우기 전에 해당 사건의 증거를 모두 가져온다. */
+  List<Evidence> findAllByCaseId(Long caseId);
+
+  /** 회원 탈퇴 시 S3 파일을 먼저 정리하기 위해 쓴다. evidence는 user_id 컬럼이 없어 findByIdAndUserId와 동일한 서브쿼리 패턴을 쓴다. */
+  @Query(
+      "SELECT e FROM Evidence e WHERE e.caseId IN (SELECT c.id FROM Case c WHERE c.userId = :userId)")
+  List<Evidence> findAllByUserId(@Param("userId") Long userId);
 }

@@ -23,6 +23,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.hanium.sololaw.domain.document.entity.Document;
+import com.hanium.sololaw.domain.document.repository.DocumentRepository;
+import com.hanium.sololaw.domain.evidence.entity.Evidence;
+import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
 import com.hanium.sololaw.domain.user.dto.request.UpdatePasswordRequest;
 import com.hanium.sololaw.domain.user.dto.request.UpdateProfileRequest;
 import com.hanium.sololaw.domain.user.dto.request.WithdrawRequest;
@@ -37,6 +41,7 @@ import com.hanium.sololaw.global.exception.CustomException;
 import com.hanium.sololaw.global.infra.redis.RefreshTokenRepository;
 import com.hanium.sololaw.global.security.jwt.JwtProvider;
 import com.hanium.sololaw.global.security.jwt.internal.GeneratedRefreshTokenPayload;
+import com.hanium.sololaw.global.storage.S3Uploader;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -48,6 +53,9 @@ class UserServiceTest {
   @Mock private UserDetailsService userDetailsService;
   @Mock private JwtProvider jwtProvider;
   @Mock private JwtProperties jwtProperties;
+  @Mock private EvidenceRepository evidenceRepository;
+  @Mock private DocumentRepository documentRepository;
+  @Mock private S3Uploader s3Uploader;
 
   @InjectMocks private UserServiceImpl userService;
 
@@ -189,6 +197,30 @@ class UserServiceTest {
 
     verify(userRepository).delete(user);
     verify(refreshTokenRepository).deleteAllRefreshTokensByUser(1L);
+  }
+
+  @Test
+  void withdraw_deletesS3FilesForEvidenceAndDocuments_beforeDbDelete() {
+    User user = user();
+    WithdrawRequest request = new WithdrawRequest("password1234");
+    Evidence evidenceWithFile = Evidence.builder().id(10L).fileUrl("evidence/5/a.pdf").build();
+    Evidence evidenceWithoutFile = Evidence.builder().id(11L).fileUrl(null).build();
+    Document documentWithFile =
+        Document.builder().id(20L).userId(1L).fileUrl("documents/5/b.txt").build();
+    Document documentWithoutFile = Document.builder().id(21L).userId(1L).fileUrl(null).build();
+
+    when(passwordEncoder.matches("password1234", "encodedPw")).thenReturn(true);
+    when(evidenceRepository.findAllByUserId(1L))
+        .thenReturn(List.of(evidenceWithFile, evidenceWithoutFile));
+    when(documentRepository.findAllByUserId(1L))
+        .thenReturn(List.of(documentWithFile, documentWithoutFile));
+
+    userService.withdraw(user, request);
+
+    verify(s3Uploader).deleteObject("evidence/5/a.pdf");
+    verify(s3Uploader).deleteObject("documents/5/b.txt");
+    verify(s3Uploader, org.mockito.Mockito.times(2)).deleteObject(any());
+    verify(userRepository).delete(user);
   }
 
   @Test
