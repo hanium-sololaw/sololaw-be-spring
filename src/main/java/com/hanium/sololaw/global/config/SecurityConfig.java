@@ -24,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import com.hanium.sololaw.global.common.BaseResponse;
 import com.hanium.sololaw.global.filter.JwtAuthenticationFilter;
@@ -59,6 +60,20 @@ public class SecurityConfig {
         .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .headers(
+            headers ->
+                headers
+                    // API 서버라 렌더링할 origin이 자기 자신뿐이다. 유일한 HTML 응답 표면인 Swagger UI도
+                    // 외부 CDN 없이 같은 origin에서 정적 리소스를 내려주므로 default-src 'self'로 충분하다.
+                    .contentSecurityPolicy(
+                        csp ->
+                            csp.policyDirectives(
+                                "default-src 'self'; frame-ancestors 'none'; base-uri 'self'"))
+                    .referrerPolicy(
+                        referrer ->
+                            referrer.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy
+                                    .STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
         .addFilterBefore(mdcFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
   }
