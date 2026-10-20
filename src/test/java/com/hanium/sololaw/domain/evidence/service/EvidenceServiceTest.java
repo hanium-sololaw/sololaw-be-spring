@@ -31,6 +31,8 @@ import com.hanium.sololaw.domain.evidence.entity.enums.ExhibitParty;
 import com.hanium.sololaw.domain.evidence.exception.EvidenceErrorCode;
 import com.hanium.sololaw.domain.evidence.mapper.EvidenceMapper;
 import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
+import com.hanium.sololaw.domain.evidence.repository.PendingEvidenceUpload;
+import com.hanium.sololaw.domain.evidence.repository.PendingEvidenceUploadRepository;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
 import com.hanium.sololaw.domain.subscription.repository.SubscriptionRepository;
 import com.hanium.sololaw.domain.user.entity.User;
@@ -45,6 +47,7 @@ class EvidenceServiceTest {
   @Mock private SubscriptionRepository subscriptionRepository;
   @Mock private EvidenceMapper evidenceMapper;
   @Mock private S3Uploader s3Uploader;
+  @Mock private PendingEvidenceUploadRepository pendingEvidenceUploadRepository;
 
   @InjectMocks private EvidenceServiceImpl evidenceService;
 
@@ -140,6 +143,8 @@ class EvidenceServiceTest {
 
     assertThat(result.uploadUrl()).isEqualTo("https://s3.example.com/presigned-put");
     assertThat(result.key()).startsWith("evidence/5/");
+    verify(pendingEvidenceUploadRepository)
+        .save(org.mockito.ArgumentMatchers.eq(result.key()), org.mockito.ArgumentMatchers.any());
   }
 
   @Test
@@ -161,12 +166,70 @@ class EvidenceServiceTest {
     Case ownedCase = Case.builder().id(5L).userId(1L).build();
 
     when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(pendingEvidenceUploadRepository.find("evidence/5/key.pdf"))
+        .thenReturn(Optional.of(new PendingEvidenceUpload(1L, 5L)));
     when(subscriptionRepository.tryReserveStorage(1L, 1000L)).thenReturn(0);
 
     assertThatThrownBy(() -> evidenceService.createEvidence(user, 5L, request))
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(EvidenceErrorCode.STORAGE_QUOTA_EXCEEDED);
+  }
+
+  @Test
+  void createEvidence_throwsUploadSessionNotFound_whenKeyNeverIssued() {
+    User user = User.builder().id(1L).build();
+    CreateEvidenceRequest request =
+        new CreateEvidenceRequest(
+            null,
+            ExhibitParty.GAP,
+            null,
+            "file.pdf",
+            "evidence/5/unknown-key.pdf",
+            1000L,
+            "PDF",
+            null,
+            null,
+            null,
+            null);
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(pendingEvidenceUploadRepository.find("evidence/5/unknown-key.pdf"))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> evidenceService.createEvidence(user, 5L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(EvidenceErrorCode.UPLOAD_SESSION_NOT_FOUND);
+  }
+
+  @Test
+  void createEvidence_throwsUploadSessionNotFound_whenKeyIssuedForAnotherUser() {
+    User user = User.builder().id(1L).build();
+    CreateEvidenceRequest request =
+        new CreateEvidenceRequest(
+            null,
+            ExhibitParty.GAP,
+            null,
+            "file.pdf",
+            "evidence/5/key.pdf",
+            1000L,
+            "PDF",
+            null,
+            null,
+            null,
+            null);
+    Case ownedCase = Case.builder().id(5L).userId(1L).build();
+
+    when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(pendingEvidenceUploadRepository.find("evidence/5/key.pdf"))
+        .thenReturn(Optional.of(new PendingEvidenceUpload(999L, 5L)));
+
+    assertThatThrownBy(() -> evidenceService.createEvidence(user, 5L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(EvidenceErrorCode.UPLOAD_SESSION_NOT_FOUND);
   }
 
   @Test
@@ -190,6 +253,8 @@ class EvidenceServiceTest {
     Evidence savedEvidence = Evidence.builder().id(20L).caseId(5L).build();
 
     when(caseRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(ownedCase));
+    when(pendingEvidenceUploadRepository.find("evidence/5/key.pdf"))
+        .thenReturn(Optional.of(new PendingEvidenceUpload(1L, 5L)));
     when(subscriptionRepository.tryReserveStorage(1L, 1000L)).thenReturn(1);
     when(evidenceMapper.toEntity(5L, request)).thenReturn(newEvidence);
     when(evidenceRepository.save(newEvidence)).thenReturn(savedEvidence);
@@ -199,6 +264,7 @@ class EvidenceServiceTest {
     EvidenceResponse result = evidenceService.createEvidence(user, 5L, request);
 
     assertThat(result.id()).isEqualTo(20L);
+    verify(pendingEvidenceUploadRepository).delete("evidence/5/key.pdf");
   }
 
   @Test
@@ -309,12 +375,32 @@ class EvidenceServiceTest {
             "new.pdf", "evidence/5/new-key.pdf", 2000L, "PDF");
 
     when(evidenceRepository.findByIdAndUserId(60L, 1L)).thenReturn(Optional.of(previous));
+    when(pendingEvidenceUploadRepository.find("evidence/5/new-key.pdf"))
+        .thenReturn(Optional.of(new PendingEvidenceUpload(1L, 5L)));
     when(subscriptionRepository.tryReserveStorage(1L, 2000L)).thenReturn(0);
 
     assertThatThrownBy(() -> evidenceService.replaceFile(user, 60L, request))
         .isInstanceOf(CustomException.class)
         .extracting(e -> ((CustomException) e).getErrorCode())
         .isEqualTo(EvidenceErrorCode.STORAGE_QUOTA_EXCEEDED);
+  }
+
+  @Test
+  void replaceFile_throwsUploadSessionNotFound_whenKeyNeverIssued() {
+    User user = User.builder().id(1L).build();
+    Evidence previous = Evidence.builder().id(60L).caseId(5L).partyType(ExhibitParty.GAP).build();
+    com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest request =
+        new com.hanium.sololaw.domain.evidence.dto.request.ReplaceEvidenceFileRequest(
+            "new.pdf", "evidence/5/unknown-key.pdf", 2000L, "PDF");
+
+    when(evidenceRepository.findByIdAndUserId(60L, 1L)).thenReturn(Optional.of(previous));
+    when(pendingEvidenceUploadRepository.find("evidence/5/unknown-key.pdf"))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> evidenceService.replaceFile(user, 60L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting(e -> ((CustomException) e).getErrorCode())
+        .isEqualTo(EvidenceErrorCode.UPLOAD_SESSION_NOT_FOUND);
   }
 
   @Test
@@ -334,6 +420,8 @@ class EvidenceServiceTest {
     Evidence savedEvidence = Evidence.builder().id(61L).caseId(5L).build();
 
     when(evidenceRepository.findByIdAndUserId(60L, 1L)).thenReturn(Optional.of(previous));
+    when(pendingEvidenceUploadRepository.find("evidence/5/new-key.pdf"))
+        .thenReturn(Optional.of(new PendingEvidenceUpload(1L, 5L)));
     when(subscriptionRepository.tryReserveStorage(1L, 2000L)).thenReturn(1);
     when(evidenceRepository.save(org.mockito.ArgumentMatchers.any(Evidence.class)))
         .thenReturn(savedEvidence);
@@ -347,5 +435,6 @@ class EvidenceServiceTest {
     // tryReserveStorage()가 clearAutomatically=true라 dirty checking만으로는 previous가 저장되지
     // 않으므로(준영속 상태로 전환됨) 명시적 save() 호출을 반드시 거쳐야 한다.
     verify(evidenceRepository).save(previous);
+    verify(pendingEvidenceUploadRepository).delete("evidence/5/new-key.pdf");
   }
 }
