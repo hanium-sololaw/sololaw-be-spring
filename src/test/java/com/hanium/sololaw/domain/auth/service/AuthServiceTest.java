@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -230,6 +232,67 @@ class AuthServiceTest {
 
     verify(refreshTokenRepository, never())
         .saveRefreshToken(anyString(), anyString(), eq(0L), any());
+  }
+
+  @Test
+  void refresh_rememberMeTrue_preservesLongTtl() {
+    String oldRefreshToken = "old-refresh-token";
+    User user = User.builder().id(1L).loginId("loginId1").build();
+    UserDetails userDetails = mock(UserDetails.class);
+    TokenResult expectedResult =
+        TokenResult.builder()
+            .accessToken("new-access-token")
+            .refreshToken("new-refresh-token")
+            .refreshTokenTtlSeconds(2_592_000L)
+            .build();
+
+    when(jwtProvider.getJtiFromToken(oldRefreshToken)).thenReturn("jti-old");
+    when(jwtProvider.getRememberMeFromToken(oldRefreshToken)).thenReturn(true);
+    when(jwtProvider.getLoginIdFromToken(oldRefreshToken)).thenReturn("loginId1");
+    when(userRepository.findByLoginId("loginId1")).thenReturn(Optional.of(user));
+    when(userDetailsService.loadUserByUsername("loginId1")).thenReturn(userDetails);
+    when(userDetails.getAuthorities()).thenReturn(List.of());
+    when(jwtProvider.generateAccessToken(any(Authentication.class))).thenReturn("new-access-token");
+    when(jwtProvider.generateRefreshToken(any(Authentication.class), eq(true)))
+        .thenReturn(new GeneratedRefreshTokenPayload("new-refresh-token", "jti-new"));
+    when(authMapper.toResult("new-access-token", "new-refresh-token", 2_592_000L))
+        .thenReturn(expectedResult);
+
+    TokenResult result = authService.refresh(oldRefreshToken);
+
+    assertThat(result).isEqualTo(expectedResult);
+    verify(refreshTokenRepository).deleteRefreshToken("jti-old", 1L);
+    verify(refreshTokenRepository).saveRefreshToken("new-refresh-token", "jti-new", 2_592_000L, 1L);
+  }
+
+  @Test
+  void refresh_rememberMeFalse_usesShortTtl() {
+    String oldRefreshToken = "old-refresh-token";
+    User user = User.builder().id(1L).loginId("loginId1").build();
+    UserDetails userDetails = mock(UserDetails.class);
+    TokenResult expectedResult =
+        TokenResult.builder()
+            .accessToken("new-access-token")
+            .refreshToken("new-refresh-token")
+            .refreshTokenTtlSeconds(3600L)
+            .build();
+
+    when(jwtProvider.getJtiFromToken(oldRefreshToken)).thenReturn("jti-old");
+    when(jwtProvider.getRememberMeFromToken(oldRefreshToken)).thenReturn(false);
+    when(jwtProvider.getLoginIdFromToken(oldRefreshToken)).thenReturn("loginId1");
+    when(userRepository.findByLoginId("loginId1")).thenReturn(Optional.of(user));
+    when(userDetailsService.loadUserByUsername("loginId1")).thenReturn(userDetails);
+    when(userDetails.getAuthorities()).thenReturn(List.of());
+    when(jwtProvider.generateAccessToken(any(Authentication.class))).thenReturn("new-access-token");
+    when(jwtProvider.generateRefreshToken(any(Authentication.class), eq(false)))
+        .thenReturn(new GeneratedRefreshTokenPayload("new-refresh-token", "jti-new"));
+    when(authMapper.toResult("new-access-token", "new-refresh-token", 3600L))
+        .thenReturn(expectedResult);
+
+    TokenResult result = authService.refresh(oldRefreshToken);
+
+    assertThat(result).isEqualTo(expectedResult);
+    verify(refreshTokenRepository).saveRefreshToken("new-refresh-token", "jti-new", 3600L, 1L);
   }
 
   @Test
