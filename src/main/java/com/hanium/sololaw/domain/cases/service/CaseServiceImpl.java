@@ -4,6 +4,7 @@
 package com.hanium.sololaw.domain.cases.service;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,12 +32,15 @@ import com.hanium.sololaw.domain.cases.repository.ActivityLogRepository;
 import com.hanium.sololaw.domain.cases.repository.CasePartyRepository;
 import com.hanium.sololaw.domain.cases.repository.CaseRepository;
 import com.hanium.sololaw.domain.cases.repository.LitigationStageRepository;
+import com.hanium.sololaw.domain.document.entity.Document;
 import com.hanium.sololaw.domain.document.repository.DocumentRepository;
+import com.hanium.sololaw.domain.evidence.entity.Evidence;
 import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
 import com.hanium.sololaw.domain.schedule.repository.ScheduleRepository;
 import com.hanium.sololaw.domain.user.entity.User;
 import com.hanium.sololaw.global.common.OffsetPageResponse;
 import com.hanium.sololaw.global.exception.CustomException;
+import com.hanium.sololaw.global.storage.S3Uploader;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +68,7 @@ public class CaseServiceImpl implements CaseService {
   private final ActivityLogRepository activityLogRepository;
   private final CaseMapper caseMapper;
   private final CasePartyMapper casePartyMapper;
+  private final S3Uploader s3Uploader;
 
   @Override
   @Transactional
@@ -288,8 +293,22 @@ public class CaseServiceImpl implements CaseService {
             .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
 
     /*
-       2. 사건 삭제
-       - case_parties/litigation_stages/case_todos는 DB CASCADE 제약으로 함께 삭제된다.
+       2. 증거·문서 S3 원본 파일 삭제
+       - evidence/documents는 DB CASCADE로 row는 함께 삭제되지만 S3 객체는 자동으로 안 지워지므로, row가
+         사라지기 전에 먼저 지운다(반대 순서면 DB엔 없는데 S3엔 추적 불가능한 민감 파일이 남는 상황이 된다).
+    */
+    evidenceRepository.findAllByCaseId(caseId).stream()
+        .map(Evidence::getFileUrl)
+        .filter(Objects::nonNull)
+        .forEach(s3Uploader::deleteObject);
+    documentRepository.findAllByCaseId(caseId).stream()
+        .map(Document::getFileUrl)
+        .filter(Objects::nonNull)
+        .forEach(s3Uploader::deleteObject);
+
+    /*
+       3. 사건 삭제
+       - case_parties/litigation_stages/case_todos/evidence/documents는 DB CASCADE 제약으로 함께 삭제된다.
     */
     caseRepository.delete(caseEntity);
 

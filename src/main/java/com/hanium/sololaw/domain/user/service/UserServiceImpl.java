@@ -3,6 +3,8 @@
  */
 package com.hanium.sololaw.domain.user.service;
 
+import java.util.Objects;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +13,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hanium.sololaw.domain.document.entity.Document;
+import com.hanium.sololaw.domain.document.repository.DocumentRepository;
+import com.hanium.sololaw.domain.evidence.entity.Evidence;
+import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
 import com.hanium.sololaw.domain.user.dto.request.UpdatePasswordRequest;
 import com.hanium.sololaw.domain.user.dto.request.UpdateProfileRequest;
 import com.hanium.sololaw.domain.user.dto.request.WithdrawRequest;
@@ -25,6 +31,7 @@ import com.hanium.sololaw.global.exception.CustomException;
 import com.hanium.sololaw.global.infra.redis.RefreshTokenRepository;
 import com.hanium.sololaw.global.security.jwt.JwtProvider;
 import com.hanium.sololaw.global.security.jwt.internal.GeneratedRefreshTokenPayload;
+import com.hanium.sololaw.global.storage.S3Uploader;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +48,9 @@ public class UserServiceImpl implements UserService {
   private final UserDetailsService userDetailsService;
   private final JwtProvider jwtProvider;
   private final JwtProperties jwtProperties;
+  private final EvidenceRepository evidenceRepository;
+  private final DocumentRepository documentRepository;
+  private final S3Uploader s3Uploader;
 
   @Override
   public UserResponse getMe(User user) {
@@ -165,14 +175,28 @@ public class UserServiceImpl implements UserService {
     }
 
     /*
-       (2) 사용자 삭제
-       - subscriptions/notification_settings 등은 ON DELETE CASCADE로 연쇄 삭제된다.
+       (2) 증거·문서 S3 원본 파일 삭제
+       - 탈퇴 시 사건·증거·문서가 DB CASCADE로 전부 삭제되지만 S3 객체는 자동으로 안 지워지므로, row가
+         사라지기 전에 먼저 지운다(반대 순서면 DB엔 없는데 S3엔 추적 불가능한 민감 파일이 남는 상황이 된다).
     */
     Long userId = user.getId();
+    evidenceRepository.findAllByUserId(userId).stream()
+        .map(Evidence::getFileUrl)
+        .filter(Objects::nonNull)
+        .forEach(s3Uploader::deleteObject);
+    documentRepository.findAllByUserId(userId).stream()
+        .map(Document::getFileUrl)
+        .filter(Objects::nonNull)
+        .forEach(s3Uploader::deleteObject);
+
+    /*
+       (3) 사용자 삭제
+       - subscriptions/notification_settings/cases/evidence/documents 등은 ON DELETE CASCADE로 연쇄 삭제된다.
+    */
     userRepository.delete(user);
 
     /*
-       (3) Redis 리프레시 토큰 일괄 무효화
+       (4) Redis 리프레시 토큰 일괄 무효화
     */
     refreshTokenRepository.deleteAllRefreshTokensByUser(userId);
 
