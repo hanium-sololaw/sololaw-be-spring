@@ -27,6 +27,8 @@ import com.hanium.sololaw.domain.evidence.entity.enums.ExhibitParty;
 import com.hanium.sololaw.domain.evidence.exception.EvidenceErrorCode;
 import com.hanium.sololaw.domain.evidence.mapper.EvidenceMapper;
 import com.hanium.sololaw.domain.evidence.repository.EvidenceRepository;
+import com.hanium.sololaw.domain.evidence.repository.PendingEvidenceUpload;
+import com.hanium.sololaw.domain.evidence.repository.PendingEvidenceUploadRepository;
 import com.hanium.sololaw.domain.subscription.entity.Subscription;
 import com.hanium.sololaw.domain.subscription.repository.SubscriptionRepository;
 import com.hanium.sololaw.domain.user.entity.User;
@@ -62,6 +64,7 @@ public class EvidenceServiceImpl implements EvidenceService {
   private final SubscriptionRepository subscriptionRepository;
   private final EvidenceMapper evidenceMapper;
   private final S3Uploader s3Uploader;
+  private final PendingEvidenceUploadRepository pendingEvidenceUploadRepository;
 
   @Override
   @Transactional(readOnly = true)
@@ -107,6 +110,15 @@ public class EvidenceServiceImpl implements EvidenceService {
         "evidence/%d/%s-%s".formatted(request.caseId(), UUID.randomUUID(), request.fileName());
     String uploadUrl =
         s3Uploader.generatePresignedPutUrl(key, request.contentType(), UPLOAD_URL_EXPIRY);
+
+    /*
+       5. 업로드 대기 세션 등록
+       - createEvidence()/replaceFile()이 발급받은 적 없는 임의의 키를 그대로 믿고 저장하지 않도록, 여기서 발급한
+         키만 유효하다는 걸 Redis에 남겨둔다(1회성 소비, TTL은 presigned URL과 동일하게).
+    */
+    pendingEvidenceUploadRepository.save(
+        key, new PendingEvidenceUpload(user.getId(), request.caseId()));
+
     EvidenceUploadUrlResponse result =
         EvidenceUploadUrlResponse.builder().uploadUrl(uploadUrl).key(key).build();
 
@@ -130,7 +142,18 @@ public class EvidenceServiceImpl implements EvidenceService {
         .orElseThrow(() -> new CustomException(CaseErrorCode.CASE_NOT_FOUND));
 
     /*
-       2. 저장 용량 원자 예약
+       2. 업로드 대기 세션 검증(1회성 소비)
+       - createUploadUrl()로 본인이 직접 발급받은 키가 아니면 거부한다. 발급받은 적 없는 임의의 S3 키를
+         fileUrl로 보내 자기 증거로 등록하는 것을 막기 위함이다.
+    */
+    pendingEvidenceUploadRepository
+        .find(request.fileUrl())
+        .filter(p -> p.userId().equals(user.getId()) && p.caseId().equals(caseId))
+        .orElseThrow(() -> new CustomException(EvidenceErrorCode.UPLOAD_SESSION_NOT_FOUND));
+    pendingEvidenceUploadRepository.delete(request.fileUrl());
+
+    /*
+       3. 저장 용량 원자 예약
        - 영향받은 row가 0이면 용량 초과로 판단해 413을 반환한다.
     */
     int affected = subscriptionRepository.tryReserveStorage(user.getId(), request.fileSize());
@@ -139,12 +162,12 @@ public class EvidenceServiceImpl implements EvidenceService {
     }
 
     /*
-       3. 증거 저장(status=PENDING)
+       4. 증거 저장(status=PENDING)
     */
     Evidence savedEvidence = evidenceRepository.save(evidenceMapper.toEntity(caseId, request));
 
     /*
-       4. ResponseDto Mapping
+       5. ResponseDto Mapping
     */
     EvidenceResponse result = evidenceMapper.toResponse(savedEvidence);
 
@@ -350,7 +373,16 @@ public class EvidenceServiceImpl implements EvidenceService {
     Evidence previous = findOwnedEvidence(evidenceId, user.getId());
 
     /*
-       2. 저장 용량 원자 예약
+       2. 업로드 대기 세션 검증(1회성 소비) — createEvidence()와 동일한 이유
+    */
+    pendingEvidenceUploadRepository
+        .find(request.fileUrl())
+        .filter(p -> p.userId().equals(user.getId()) && p.caseId().equals(previous.getCaseId()))
+        .orElseThrow(() -> new CustomException(EvidenceErrorCode.UPLOAD_SESSION_NOT_FOUND));
+    pendingEvidenceUploadRepository.delete(request.fileUrl());
+
+    /*
+       3. 저장 용량 원자 예약
        - 새 파일 크기만큼 예약한다. 이전 버전 파일은 이력 보존을 위해 유지하며 용량도 계속 점유한다.
     */
     int affected = subscriptionRepository.tryReserveStorage(user.getId(), request.fileSize());
@@ -359,14 +391,14 @@ public class EvidenceServiceImpl implements EvidenceService {
     }
 
     /*
-       3. 기존 증거를 이전 버전으로 전환(isLatest=false, 실 파일은 이력 조회를 위해 삭제하지 않음)
+       4. 기존 증거를 이전 버전으로 전환(isLatest=false, 실 파일은 이력 조회를 위해 삭제하지 않음)
        - tryReserveStorage()가 clearAutomatically=true라 previous는 이미 준영속 상태이므로 명시적으로 저장한다.
     */
     previous.updateIsLatest(false);
     evidenceRepository.save(previous);
 
     /*
-       4. exhibitNo·partyType·proofPurpose 등 메타데이터를 물려받은 새 증거 저장(최신본, status는 기본값으로 초기화)
+       5. exhibitNo·partyType·proofPurpose 등 메타데이터를 물려받은 새 증거 저장(최신본, status는 기본값으로 초기화)
     */
     Evidence newEvidence =
         Evidence.builder()
@@ -386,7 +418,7 @@ public class EvidenceServiceImpl implements EvidenceService {
     Evidence savedEvidence = evidenceRepository.save(newEvidence);
 
     /*
-       5. ResponseDto Mapping
+       6. ResponseDto Mapping
     */
     EvidenceResponse result = evidenceMapper.toResponse(savedEvidence);
 

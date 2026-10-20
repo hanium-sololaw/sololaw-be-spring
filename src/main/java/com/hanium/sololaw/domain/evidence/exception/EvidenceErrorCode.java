@@ -19,6 +19,8 @@ public enum EvidenceErrorCode implements BaseErrorCode {
       "EVD4003",
       "허용되지 않는 파일 형식입니다. (PDF, JPG, PNG, GIF, WEBP, HEIC, DOCX, HWP만 업로드 가능)",
       HttpStatus.BAD_REQUEST),
+  UPLOAD_SESSION_NOT_FOUND(
+      "EVD4004", "발급받은 업로드 세션을 찾을 수 없습니다. 업로드 URL을 다시 발급받아 주세요.", HttpStatus.BAD_REQUEST),
   STORAGE_QUOTA_EXCEEDED("EVD4131", "저장 용량이 부족합니다.", HttpStatus.PAYLOAD_TOO_LARGE);
 
   private final String code;
